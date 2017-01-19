@@ -89,7 +89,9 @@ pub fn capture_screenshot() -> Screenshot
 
         for pixel_index in 0..width * height
         {
-            let offsets = (pixel_index, (pixel_index + 1), (pixel_index + 2));
+            let pixel_address = pixel_index * bits_per_pixel as u32;
+
+            let offsets = (pixel_address, (pixel_address + 1), (pixel_address + 2));
             let pixel = (
                     *((*img).data.offset(offsets.0 as isize)) as u8
                     , *((*img).data.offset(offsets.1 as isize)) as u8
