@@ -1,0 +1,11 @@
+[package]
+name = "workspace_switcher"
+version = "0.1.0"
+authors = ["Frans Skarman <frans.skarman@gmail.com>"]
+
+[dependencies]
+libc = "*"
+
+[dependencies.x11]
+version = "2.6.1"
+features = ["xlib"]
