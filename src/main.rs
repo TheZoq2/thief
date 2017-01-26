@@ -1,19 +1,29 @@
-#![feature(test)]
-
 extern crate x11;
 extern crate libc;
+extern crate nalgebra as na;
 
 #[macro_use]
 extern crate glium;
 
-use std::io::Cursor;
+mod drawable;
+use drawable::{Drawable, CameraState};
 
 use x11::xlib;
 use std::mem;
 
-use glium::texture::RawImage2d;
+use std::sync::Arc;
+
+use glium::texture::{RawImage2d, Texture2d};
 
 type Pixel = (u8, u8, u8);
+
+#[derive(Copy, Clone)]
+struct Vertex {
+    position: (f32, f32),
+    tex_coords: (f32, f32),
+}
+
+implement_vertex!(Vertex, position, tex_coords);
 
 pub struct Screenshot
 {
@@ -98,9 +108,9 @@ pub fn capture_screenshot() -> Screenshot
 
             let offsets = (pixel_address, (pixel_address + 1), (pixel_address + 2));
             let pixel = (
-                    *((*img).data.offset(offsets.0 as isize)) as u8
+                    *((*img).data.offset(offsets.2 as isize)) as u8
                     , *((*img).data.offset(offsets.1 as isize)) as u8
-                    , *((*img).data.offset(offsets.2 as isize)) as u8
+                    , *((*img).data.offset(offsets.0 as isize)) as u8
                 );
 
             screenshot.push_pixel(pixel);
@@ -110,6 +120,54 @@ pub fn capture_screenshot() -> Screenshot
         xlib::XCloseDisplay(display);
 
         screenshot
+    }
+}
+
+
+
+pub struct Sprite
+{
+    position: na::Vector2<f32>,
+    scale: na::Vector2<f32>,
+    texture: Arc<Texture2d>,
+    aspect_ratio: f32,
+    depth: f32,
+}
+
+impl Sprite
+{
+    pub fn new(texture: Arc<Texture2d>) -> Sprite
+    {
+        let aspect_ratio = (texture.get_width() as f32) 
+                / (texture.get_height().unwrap() as f32);
+
+        Sprite
+        {
+            position: na::zero(),
+            scale: na::one(),
+            texture: texture,
+            aspect_ratio: aspect_ratio,
+            depth: 0.,
+        }
+    }
+}
+
+impl drawable::Drawable for Sprite
+{
+    fn draw(&self, display: &glium::Frame, camera_state: CameraState)
+    {
+        let shape = vec!(
+            //First triangle
+            Vertex { position: (0., 0.), tex_coords: (0., 0.) },
+            Vertex { position: (0., self.aspect_ratio), tex_coords: (0., 1.) },
+            Vertex { position: (1., 0.), tex_coords: (1., 0.) },
+            //Second triangle                                
+            Vertex { position: (0., self.aspect_ratio), tex_coords: (0., 1.) },
+            Vertex { position: (1., self.aspect_ratio), tex_coords: (1., 1.) },
+            Vertex { position: (1., 0.), tex_coords: (1., 0.) },
+            );
+
+        let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
     }
 }
 
@@ -124,23 +182,16 @@ pub fn run_selector()
     let image = screenshot.get_glium_image();
     let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
 
-    #[derive(Copy, Clone)]
-    struct Vertex {
-        position: [f32; 2],
-        tex_coords: [f32; 2],
-    }
-
-    implement_vertex!(Vertex, position, tex_coords);
 
     let shape = vec![
             //First triangle
-            Vertex { position: [0., 0.], tex_coords: [0., 0.] },
-            Vertex { position: [0., aspect_ratio], tex_coords: [0., 1.] },
-            Vertex { position: [1., 0.], tex_coords: [1., 0.] },
+            Vertex { position: (0., 0.), tex_coords: (0., 0.) },
+            Vertex { position: (0., aspect_ratio), tex_coords: (0., 1.) },
+            Vertex { position: (1., 0.), tex_coords: (1., 0.) },
             //Second triangle                                
-            Vertex { position: [0., aspect_ratio], tex_coords: [0., 1.] },
-            Vertex { position: [1., aspect_ratio], tex_coords: [1., 1.] },
-            Vertex { position: [1., 0.], tex_coords: [1., 0.] },
+            Vertex { position: (0., aspect_ratio), tex_coords: (0., 1.) },
+            Vertex { position: (1., aspect_ratio), tex_coords: (1., 1.) },
+            Vertex { position: (1., 0.), tex_coords: (1., 0.) },
         ];
 
     let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
@@ -170,22 +221,20 @@ pub fn run_selector()
 
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
 
-    let mut t = -0.5;
-
     loop {
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
 
         let (width, height) = target.get_dimensions();
         let aspect_ratio = height as f32 / width as f32;
-        let scale = 1.;
+        let scale = 2.;
 
         let uniforms = uniform! {
             matrix: [
                 [aspect_ratio * scale, 0.0, 0.0, 0.0],
                 [0.0 , scale, 0.0, 0.0],
                 [0.0 , 0.0, scale, 0.0],
-                [-0.5, -0.5, 0.0, 1.0f32],
+                [-aspect_ratio * scale/2., -scale/2., 0.0, 1.0f32],
             ],
             tex: &texture,
         };

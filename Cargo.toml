@@ -6,6 +6,7 @@ authors = ["Frans Skarman <frans.skarman@gmail.com>"]
 [dependencies]
 libc = "*"
 glium = "*"
+nalgebra = "*"
 
 [dependencies.x11]
 version = "2.6.1"
