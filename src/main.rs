@@ -48,6 +48,11 @@ impl Screenshot
         let dimensions = (self.width, self.height);
         RawImage2d::from_raw_rgb(self.pixels, dimensions)
     }
+
+    fn get_aspect_ratio(&self) -> f32
+    {
+        self.height as f32 / self.width as f32
+    }
 }
 
 pub fn capture_screenshot() -> Screenshot
@@ -77,19 +82,19 @@ pub fn capture_screenshot() -> Screenshot
                                   , xlib::XAllPlanes()
                                   , xlib::ZPixmap);
 
-        let bits_per_pixel = (*img).bits_per_pixel;
+        let bytes_per_pixel = (*img).bits_per_pixel / 8;
 
         let mut screenshot = Screenshot::new(width, height);
 
         //TODO: Handle propperly
-        if bits_per_pixel < 3
+        if bytes_per_pixel < 3
         {
             panic!("Bits per pixel is less than 3, X might be weird");
         }
 
         for pixel_index in 0..width * height
         {
-            let pixel_address = pixel_index * bits_per_pixel as u32;
+            let pixel_address = pixel_index * bytes_per_pixel as u32;
 
             let offsets = (pixel_address, (pixel_address + 1), (pixel_address + 2));
             let pixel = (
@@ -108,15 +113,16 @@ pub fn capture_screenshot() -> Screenshot
     }
 }
 
-fn main() {
+pub fn run_selector()
+{
     use glium::{DisplayBuild, Surface};
     let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
 
     let screenshot = capture_screenshot();
+    let aspect_ratio = screenshot.get_aspect_ratio();
 
-    //let image = glium::texture::RawImage2d::from_raw_rgba_reversed(image.into_raw(), dimensions);
     let image = screenshot.get_glium_image();
-    let texture = glium::texture::Texture2d::new(&display, image).unwrap();
+    let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
 
     #[derive(Copy, Clone)]
     struct Vertex {
@@ -129,11 +135,11 @@ fn main() {
     let shape = vec![
             //First triangle
             Vertex { position: [0., 0.], tex_coords: [0., 0.] },
-            Vertex { position: [0., 1.], tex_coords: [0., 1.] },
+            Vertex { position: [0., aspect_ratio], tex_coords: [0., 1.] },
             Vertex { position: [1., 0.], tex_coords: [1., 0.] },
             //Second triangle                                
-            Vertex { position: [0., 1.], tex_coords: [0., 1.] },
-            Vertex { position: [1., 1.], tex_coords: [1., 1.] },
+            Vertex { position: [0., aspect_ratio], tex_coords: [0., 1.] },
+            Vertex { position: [1., aspect_ratio], tex_coords: [1., 1.] },
             Vertex { position: [1., 0.], tex_coords: [1., 0.] },
         ];
 
@@ -167,20 +173,18 @@ fn main() {
     let mut t = -0.5;
 
     loop {
-        // we update `t`
-        t += 0.0002;
-        if t > 0.5 {
-            t = -0.5;
-        }
-
         let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 1.0, 1.0);
+        target.clear_color(0.0, 0.0, 0.0, 1.0);
+
+        let (width, height) = target.get_dimensions();
+        let aspect_ratio = height as f32 / width as f32;
+        let scale = 1.;
 
         let uniforms = uniform! {
             matrix: [
-                [1.0 , 0.0, 0.0, 0.0],
-                [0.0 , 1.0, 0.0, 0.0],
-                [0.0 , 0.0, 1.0, 0.0],
+                [aspect_ratio * scale, 0.0, 0.0, 0.0],
+                [0.0 , scale, 0.0, 0.0],
+                [0.0 , 0.0, scale, 0.0],
                 [-0.5, -0.5, 0.0, 1.0f32],
             ],
             tex: &texture,
@@ -197,6 +201,10 @@ fn main() {
             }
         }
     }
+}
+
+fn main() {
+    run_selector();
 }
 
 
