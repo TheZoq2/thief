@@ -7,8 +7,9 @@ extern crate glium;
 
 mod drawable;
 mod drawing_util;
+mod camera_state;
 
-use drawable::{Drawable, CameraState};
+use drawable::{Drawable};
 
 use x11::xlib;
 use std::mem;
@@ -17,7 +18,9 @@ use std::sync::Arc;
 
 use glium::texture::{RawImage2d, Texture2d};
 use glium::texture::srgb_texture2d::SrgbTexture2d;
-use glium::{Frame, Surface};
+use glium::{Surface};
+
+use camera_state::CameraState;
 
 const default_vertex_shader: &'static str = r#"
         #version 140
@@ -158,6 +161,8 @@ pub struct Sprite
     aspect_ratio: f32,
     depth: f32,
 
+    origin: na::Vector2<f32>,
+
     vertices: Arc<glium::VertexBuffer<Vertex>>,
     shader: Arc<glium::Program>
 }
@@ -195,15 +200,22 @@ impl Sprite
             aspect_ratio: aspect_ratio,
             depth: 0.,
 
+            origin: na::zero(),
+
             vertices: Arc::new(glium::VertexBuffer::new(display, &shape).unwrap()),
             shader: Arc::new(program)
         }
+    }
+
+    pub fn set_position(&mut self, position: na::Vector2<f32>)
+    {
+        self.position = position;
     }
 }
 
 impl drawable::Drawable for Sprite
 {
-    fn draw(&self, target: &mut glium::Frame, camera_state: CameraState)
+    fn draw(&self, target: &mut glium::Frame, camera_state: &CameraState)
     {
         let (width, height) = target.get_dimensions();
         let window_aspect_ratio = drawing_util::calculate_aspect_ratio(
@@ -214,14 +226,21 @@ impl drawable::Drawable for Sprite
         let scale_x = self.scale.x * self.aspect_ratio;
         let scale_y = self.scale.y * window_aspect_ratio;
 
+        let x_offset = -scale_x * self.origin.x + self.position.x;
+        let y_offset = -scale_y * self.origin.y + self.position.y;
+
+        let matrix = na::Matrix4::new(
+                scale_x, 0.     , 0., x_offset,
+                0.     , scale_y, 0., y_offset,
+                0.     , 0.     , 1., 0.,
+                0.     , 0.     , 0., 1.
+            );
+
+        let final_matrix = matrix * camera_state.get_matrix();
+
 
         let uniforms = uniform! {
-            matrix: [
-                [scale_x, 0.0, 0.0, 0.0],
-                [0.0 , scale_y, 0.0, 0.0],
-                [0.0 , 0.0, 1., 0.0],
-                [-scale_x / 2., -scale_y/2., 0.0, 1.0f32],
-            ],
+            matrix: *final_matrix.as_ref(),
             tex: &*self.texture,
         };
 
@@ -242,48 +261,19 @@ pub fn run_selector()
     let image = screenshot.get_glium_image();
     let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
 
+    let mut sprite = Sprite::new(&display, Arc::new(texture));
 
-    let shape = vec![
-            //First triangle
-            Vertex { position: (0., 0.), tex_coords: (0., 0.) },
-            Vertex { position: (0., aspect_ratio), tex_coords: (0., 1.) },
-            Vertex { position: (1., 0.), tex_coords: (1., 0.) },
-            //Second triangle                                
-            Vertex { position: (0., aspect_ratio), tex_coords: (0., 1.) },
-            Vertex { position: (1., aspect_ratio), tex_coords: (1., 1.) },
-            Vertex { position: (1., 0.), tex_coords: (1., 0.) },
-        ];
+    let mut camera_state = CameraState::new();
 
-    let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-
-
-    let program = glium::Program::from_source(&display, default_vertex_shader, default_fragment_shader, None).unwrap();
-
-    let sprite = Sprite::new(&display, Arc::new(texture));
+    //camera_state.set_position(na::Vector2::new(-0.5, -0.5))
+    
+    sprite.set_position(na::Vector2::new(0.25, 0.25));
 
     loop {
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
 
-        //let (width, height) = target.get_dimensions();
-        //let aspect_ratio = height as f32 / width as f32;
-        //let scale = 2.;
-
-        //let uniforms = uniform! {
-        //    matrix: [
-        //        [aspect_ratio * scale, 0.0, 0.0, 0.0],
-        //        [0.0 , scale, 0.0, 0.0],
-        //        [0.0 , 0.0, scale, 0.0],
-        //        [-aspect_ratio * scale/2., -scale/2., 0.0, 1.0f32],
-        //    ],
-        //    tex: &texture,
-        //};
-
-        //target.draw(&vertex_buffer, &indices, &program, &uniforms,
-        //            &Default::default()).unwrap();
-
-        sprite.draw(&mut target, CameraState::new());
+        sprite.draw(&mut target, &camera_state);
 
         target.finish().unwrap();
 
@@ -303,16 +293,16 @@ fn main() {
 
 
 
-#[cfg(test)]
-mod benchmarks
-{
-    use super::*;
-    extern crate test;
-
-    #[bench]
-    fn screenshot_benchmark(b: &mut test::Bencher) {
-        b.iter(|| {
-            let screenshot = capture_screenshot();
-        })
-    }
-}
+//#[cfg(test)]
+//mod benchmarks
+//{
+//    use super::*;
+//    extern crate test;
+//
+//    #[bench]
+//    fn screenshot_benchmark(b: &mut test::Bencher) {
+//        b.iter(|| {
+//            let screenshot = capture_screenshot();
+//        })
+//    }
+//}
