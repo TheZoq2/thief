@@ -6,6 +6,8 @@ extern crate nalgebra as na;
 extern crate glium;
 
 mod drawable;
+mod drawing_util;
+
 use drawable::{Drawable, CameraState};
 
 use x11::xlib;
@@ -14,6 +16,29 @@ use std::mem;
 use std::sync::Arc;
 
 use glium::texture::{RawImage2d, Texture2d};
+use glium::texture::srgb_texture2d::SrgbTexture2d;
+use glium::{Frame, Surface};
+
+const default_vertex_shader: &'static str = r#"
+        #version 140
+        in vec2 position;
+        in vec2 tex_coords;
+        out vec2 v_tex_coords;
+        uniform mat4 matrix;
+        void main() {
+            v_tex_coords = tex_coords;
+            gl_Position = matrix * vec4(position, 0.0, 1.0);
+        }
+    "#;
+const default_fragment_shader: &'static str = r#"
+        #version 140
+        in vec2 v_tex_coords;
+        out vec4 color;
+        uniform sampler2D tex;
+        void main() {
+            color = texture(tex, v_tex_coords);
+        }
+    "#;
 
 type Pixel = (u8, u8, u8);
 
@@ -129,18 +154,39 @@ pub struct Sprite
 {
     position: na::Vector2<f32>,
     scale: na::Vector2<f32>,
-    texture: Arc<Texture2d>,
+    texture: Arc<SrgbTexture2d>,
     aspect_ratio: f32,
     depth: f32,
+
+    vertices: Arc<glium::VertexBuffer<Vertex>>,
+    shader: Arc<glium::Program>
 }
 
 impl Sprite
 {
-    pub fn new(texture: Arc<Texture2d>) -> Sprite
+    pub fn new(display: &glium::Display, texture: Arc<SrgbTexture2d>) -> Sprite
     {
         let aspect_ratio = (texture.get_width() as f32) 
                 / (texture.get_height().unwrap() as f32);
 
+        let shape = vec!(
+                //First triangle
+                Vertex { position: (0., 0.), tex_coords: (0., 0.) },
+                Vertex { position: (0., 1.), tex_coords: (0., 1.) },
+                Vertex { position: (1., 0.), tex_coords: (1., 0.) },
+                //Second triangle                                
+                Vertex { position: (0., 1.), tex_coords: (0., 1.) },
+                Vertex { position: (1., 1.), tex_coords: (1., 1.) },
+                Vertex { position: (1., 0.), tex_coords: (1., 0.) },
+            );
+
+
+        let program = glium::Program::from_source(
+                    display, 
+                    default_vertex_shader, 
+                    default_fragment_shader, 
+                    None
+                ).unwrap();
         Sprite
         {
             position: na::zero(),
@@ -148,26 +194,40 @@ impl Sprite
             texture: texture,
             aspect_ratio: aspect_ratio,
             depth: 0.,
+
+            vertices: Arc::new(glium::VertexBuffer::new(display, &shape).unwrap()),
+            shader: Arc::new(program)
         }
     }
 }
 
 impl drawable::Drawable for Sprite
 {
-    fn draw(&self, display: &glium::Frame, camera_state: CameraState)
+    fn draw(&self, target: &mut glium::Frame, camera_state: CameraState)
     {
-        let shape = vec!(
-            //First triangle
-            Vertex { position: (0., 0.), tex_coords: (0., 0.) },
-            Vertex { position: (0., self.aspect_ratio), tex_coords: (0., 1.) },
-            Vertex { position: (1., 0.), tex_coords: (1., 0.) },
-            //Second triangle                                
-            Vertex { position: (0., self.aspect_ratio), tex_coords: (0., 1.) },
-            Vertex { position: (1., self.aspect_ratio), tex_coords: (1., 1.) },
-            Vertex { position: (1., 0.), tex_coords: (1., 0.) },
+        let (width, height) = target.get_dimensions();
+        let window_aspect_ratio = drawing_util::calculate_aspect_ratio(
+                width as f32,
+                height as f32
             );
 
-        let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
+        let scale_x = self.scale.x * self.aspect_ratio;
+        let scale_y = self.scale.y * window_aspect_ratio;
+
+
+        let uniforms = uniform! {
+            matrix: [
+                [scale_x, 0.0, 0.0, 0.0],
+                [0.0 , scale_y, 0.0, 0.0],
+                [0.0 , 0.0, 1., 0.0],
+                [-scale_x / 2., -scale_y/2., 0.0, 1.0f32],
+            ],
+            tex: &*self.texture,
+        };
+
+        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+        target.draw(&*self.vertices, &indices, &*self.shader, &uniforms,
+                    &Default::default()).unwrap();
     }
 }
 
@@ -197,50 +257,34 @@ pub fn run_selector()
     let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-    let vertex_shader_src = r#"
-        #version 140
-        in vec2 position;
-        in vec2 tex_coords;
-        out vec2 v_tex_coords;
-        uniform mat4 matrix;
-        void main() {
-            v_tex_coords = tex_coords;
-            gl_Position = matrix * vec4(position, 0.0, 1.0);
-        }
-    "#;
 
-    let fragment_shader_src = r#"
-        #version 140
-        in vec2 v_tex_coords;
-        out vec4 color;
-        uniform sampler2D tex;
-        void main() {
-            color = texture(tex, v_tex_coords);
-        }
-    "#;
+    let program = glium::Program::from_source(&display, default_vertex_shader, default_fragment_shader, None).unwrap();
 
-    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
+    let sprite = Sprite::new(&display, Arc::new(texture));
 
     loop {
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
 
-        let (width, height) = target.get_dimensions();
-        let aspect_ratio = height as f32 / width as f32;
-        let scale = 2.;
+        //let (width, height) = target.get_dimensions();
+        //let aspect_ratio = height as f32 / width as f32;
+        //let scale = 2.;
 
-        let uniforms = uniform! {
-            matrix: [
-                [aspect_ratio * scale, 0.0, 0.0, 0.0],
-                [0.0 , scale, 0.0, 0.0],
-                [0.0 , 0.0, scale, 0.0],
-                [-aspect_ratio * scale/2., -scale/2., 0.0, 1.0f32],
-            ],
-            tex: &texture,
-        };
+        //let uniforms = uniform! {
+        //    matrix: [
+        //        [aspect_ratio * scale, 0.0, 0.0, 0.0],
+        //        [0.0 , scale, 0.0, 0.0],
+        //        [0.0 , 0.0, scale, 0.0],
+        //        [-aspect_ratio * scale/2., -scale/2., 0.0, 1.0f32],
+        //    ],
+        //    tex: &texture,
+        //};
 
-        target.draw(&vertex_buffer, &indices, &program, &uniforms,
-                    &Default::default()).unwrap();
+        //target.draw(&vertex_buffer, &indices, &program, &uniforms,
+        //            &Default::default()).unwrap();
+
+        sprite.draw(&mut target, CameraState::new());
+
         target.finish().unwrap();
 
         for ev in display.poll_events() {

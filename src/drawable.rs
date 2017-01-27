@@ -8,7 +8,21 @@ pub struct CameraState
     zoom: f32
 }
 
+impl CameraState
+{
+    pub fn new() -> CameraState
+    {
+        CameraState {
+            position: na::one(),
+            zoom: 0.
+        }
+    }
+}
+
 pub trait Drawable
 {
-    fn draw(&self, display: &glium::Frame, camera_state: CameraState);
+    fn draw(&self, display: &mut glium::Frame, camera_state: CameraState);
 }
+
+
+
