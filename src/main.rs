@@ -152,10 +152,10 @@ pub fn run_selector()
     sprite.set_position(na::Vector2::new(0., 0.5));
     sprite.set_origin(na::Vector2::new(0.5, 0.5));
 
-    let t = 0.;
+    let mut t: f32 = 0.;
     loop {
         t += 0.05;
-        sprite.set_position(na::Vector2::new(t.sin(), 0.));
+        sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
