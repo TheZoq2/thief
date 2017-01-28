@@ -80,8 +80,11 @@ impl Sprite
             texture: Arc<SrgbTexture2d>
         ) -> Sprite
     {
-        let aspect_ratio = (texture.get_width() as f32) 
-                / (texture.get_height().unwrap() as f32);
+        let texture_x = texture.get_width();
+        let texture_y = texture.get_height().unwrap();
+
+        let aspect_ratio = (texture_x as f32) 
+                / (texture_y as f32);
 
         Sprite
         {
@@ -90,6 +93,8 @@ impl Sprite
             texture: texture,
             aspect_ratio: aspect_ratio,
             depth: 0.,
+
+            texture_size: (texture_x, texture_y),
 
             origin: na::zero(),
 
