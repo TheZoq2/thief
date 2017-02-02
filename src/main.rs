@@ -3,6 +3,7 @@
 extern crate x11;
 extern crate libc;
 extern crate nalgebra as na;
+extern crate image;
 
 #[macro_use]
 extern crate glium;
@@ -27,6 +28,8 @@ use glium::texture::{RawImage2d};
 use camera_state::CameraState;
 
 use glium_types::{Pixel};
+
+use std::path::Path;
 
 
 pub struct Screenshot
@@ -128,6 +131,16 @@ pub fn capture_screenshot() -> Screenshot
 }
 
 
+pub fn load_texture<'a>(filename: &Path) -> RawImage2d<'a, u8>
+{
+    let image = image::open(filename).unwrap().to_rgba();
+    let dimensions = image.dimensions();
+    let raw_pixels = image.into_raw();
+
+    RawImage2d::from_raw_rgba(raw_pixels, dimensions)
+}
+
+
 
 pub fn run_selector()
 {
@@ -136,8 +149,10 @@ pub fn run_selector()
 
     let screenshot = capture_screenshot();
 
-    let image = screenshot.get_glium_image();
-    let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
+    //let image = screenshot.get_glium_image();
+    //let image = RawImage2d::from_raw_rgba(image::open(&Path::new("media/fir1.png")).unwrap().raw_pixels());
+    let texture_path = Path::new("media/fir1.png");
+    let texture = glium::texture::SrgbTexture2d::new(&display, load_texture(texture_path)).unwrap();
 
     //let mut sprite = Sprite::new(&display, Arc::new(texture));
     let sprite_factory = SpriteFactory::new(&display);
@@ -149,13 +164,13 @@ pub fn run_selector()
     //camera_state.set_position(na::Vector2::new(-0.5, -0.5))
     
     //sprite.set_position(na::Vector2::new(0.25, 0.25));
-    sprite.set_position(na::Vector2::new(0., 0.5));
-    sprite.set_origin(na::Vector2::new(0.5, 0.5));
+    //sprite.set_position(na::Vector2::new(0., 0.5));
+    sprite.set_origin(na::Vector2::new(0.00, 0.00));
 
     let mut t: f32 = 0.;
     loop {
         t += 0.05;
-        sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
+        //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -177,19 +192,3 @@ fn main() {
     run_selector();
 }
 
-
-
-
-//#[cfg(test)]
-//mod benchmarks
-//{
-//    use super::*;
-//    extern crate test;
-//
-//    #[bench]
-//    fn screenshot_benchmark(b: &mut test::Bencher) {
-//        b.iter(|| {
-//            let screenshot = capture_screenshot();
-//        })
-//    }
-//}

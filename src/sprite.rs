@@ -124,11 +124,18 @@ impl drawable::Drawable for Sprite
                 height as f32
             );
 
-        let scale_x = self.scale.x * self.aspect_ratio;
-        let scale_y = self.scale.y * window_aspect_ratio;
+        let scale_x = self.scale.x * self.texture_size.0 as f32;
+        let scale_y = self.scale.y * self.texture_size.1 as f32;
 
-        let x_offset = -scale_x * self.origin.x + self.position.x;
-        let y_offset = -scale_y * self.origin.y + self.position.y;
+        let x_offset = (-scale_x * self.origin.x + self.position.x) / width as f32;
+        let y_offset = (-scale_y * self.origin.y + self.position.y) / height as f32;
+
+        //let position_matrix = na::Matrix4::new(
+        //        1., 0., 0., x_offset,
+        //        0., 1., 0., y_offset,
+        //        0., 0., 1., 0.,
+        //        0., 0., 0., 1.
+        //    );
 
 
         let matrix = na::Matrix4::new(
@@ -138,7 +145,11 @@ impl drawable::Drawable for Sprite
                 0.     , 0.     , 0., 1.
             );
 
-        let final_matrix = matrix * camera_state.get_matrix();
+        let final_matrix = matrix
+            //* camera_state.get_matrix() 
+            * drawing_util::get_window_scaling_matrix((width as f32, height as f32));
+        
+        println!("{}", final_matrix);
 
 
         let uniforms = uniform! {
