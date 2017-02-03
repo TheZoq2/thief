@@ -160,17 +160,20 @@ pub fn run_selector()
     let mut sprite = sprite_factory.create_sprite(Arc::new(texture));
 
     let mut camera_state = CameraState::new();
+    camera_state.set_position(na::Vector2::new(0., 0.));
 
-    //camera_state.set_position(na::Vector2::new(-0.5, -0.5))
     
     //sprite.set_position(na::Vector2::new(0.25, 0.25));
-    //sprite.set_position(na::Vector2::new(0., 0.5));
-    sprite.set_origin(na::Vector2::new(0.00, 0.00));
+    //sprite.set_position(na::Vector2::new(0., 200.));
+    //sprite.set_origin(na::Vector2::new(0.00, 0.00));
+    sprite.set_scale(na::Vector2::new(6., 6.));
+    
 
     let mut t: f32 = 0.;
     loop {
         t += 0.05;
         //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
+        camera_state.set_position(na::Vector2::new((t*0.01).sin() * 300., 100.));
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);

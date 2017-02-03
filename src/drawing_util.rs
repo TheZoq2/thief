@@ -1,13 +1,5 @@
 extern crate nalgebra as na;
 
-/**
-  Calculates the aspect ratio between x and y
- */
-pub fn calculate_aspect_ratio(x: f32, y: f32) -> f32
-{
-    x / y
-}
-
 
 pub fn get_window_scaling_matrix(window_size: (f32, f32)) -> na::Matrix4<f32>
 {
@@ -20,3 +12,4 @@ pub fn get_window_scaling_matrix(window_size: (f32, f32)) -> na::Matrix4<f32>
             0.,   0.,   0., 1.
         )
 }
+

@@ -112,53 +112,195 @@ impl Sprite
     {
         self.origin = origin;
     }
+
+    pub fn set_scale(&mut self, scale: na::Vector2<f32>)
+    {
+        self.scale = scale;
+    }
 }
 
 impl drawable::Drawable for Sprite
 {
     fn draw(&self, target: &mut glium::Frame, camera_state: &CameraState)
     {
-        let (width, height) = target.get_dimensions();
-        let window_aspect_ratio = drawing_util::calculate_aspect_ratio(
-                width as f32,
-                height as f32
+
+        let matrix = generate_default_matrix(
+                self.scale
+                , self.texture_size
+                , self.position
+                , self.origin
+                , target.get_dimensions()
+                , camera_state
             );
-
-        let scale_x = self.scale.x * self.texture_size.0 as f32;
-        let scale_y = self.scale.y * self.texture_size.1 as f32;
-
-        let x_offset = (-scale_x * self.origin.x + self.position.x) / width as f32;
-        let y_offset = (-scale_y * self.origin.y + self.position.y) / height as f32;
-
-        //let position_matrix = na::Matrix4::new(
-        //        1., 0., 0., x_offset,
-        //        0., 1., 0., y_offset,
-        //        0., 0., 1., 0.,
-        //        0., 0., 0., 1.
-        //    );
-
-
-        let matrix = na::Matrix4::new(
-                scale_x, 0.     , 0., x_offset,
-                0.     , scale_y, 0., y_offset,
-                0.     , 0.     , 1., 0.,
-                0.     , 0.     , 0., 1.
-            );
-
-        let final_matrix = matrix
-            //* camera_state.get_matrix() 
-            * drawing_util::get_window_scaling_matrix((width as f32, height as f32));
-        
-        println!("{}", final_matrix);
-
 
         let uniforms = uniform! {
-            matrix: *final_matrix.as_ref(),
+            matrix: *matrix.as_ref(),
             tex: &*self.texture,
         };
 
         let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
         target.draw(&*self.vertices, &indices, &*self.shader, &uniforms,
                     &Default::default()).unwrap();
+    }
+}
+
+
+/**
+  Calculates a transform matrix for positioning things based on pixel positions
+  instead of floats
+
+  ## Parameters:
+  scale: 
+  vector of 2 floats where (1.0, 1.0) means 1 pixel on the sprite
+  should map to one pixel on the screen
+
+  texture_size:
+  The size of the sprites texture in pixels
+
+  position:
+  position of the sprite within the world in pixels
+
+  origin:
+  Vector between 0 and 1 which specifies what point on the sprite to make
+  the center
+
+  target_size:
+  The size of the render target in pixels
+
+  ## Returns
+  A transformation matrix for rendering the sprite
+*/
+pub fn generate_default_matrix(
+            scale: na::Vector2<f32>,
+            texture_size: (u32, u32),
+            position: na::Vector2<f32>,
+            origin: na::Vector2<f32>,
+            target_size: (u32, u32),
+            camera_state: &CameraState
+        ) -> na::Matrix4<f32>
+{
+    let (target_width, target_height) = target_size;
+
+    let scale_x = scale.x * texture_size.0 as f32;
+    let scale_y = scale.y * texture_size.1 as f32;
+
+    let x_offset = (-scale_x * origin.x + position.x) / target_width as f32;
+    let y_offset = (-scale_y * origin.y + position.y) / target_height as f32;
+
+
+    let matrix = na::Matrix4::new(
+            scale_x, 0.     , 0., x_offset,
+            0.     , scale_y, 0., y_offset,
+            0.     , 0.     , 1., 0.,
+            0.     , 0.     , 0., 1.
+        );
+
+    let final_matrix = (matrix + camera_state.get_position_matrix((target_width, target_height)))
+        * camera_state.get_scaling_matrix() 
+        * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32));
+
+    println!("{}", final_matrix);
+
+    final_matrix
+}
+
+
+
+
+#[cfg(test)]
+mod tests
+{
+    use na;
+    use super::*;
+
+    #[test]
+    fn test_default_matrix_scale()
+    {
+        let scale = na::Vector2::new(2., 2.);
+        let texture_size = (100, 100);
+        let position = na::zero();
+        let origin = na::zero();
+        let target_size = (100, 50);
+        let camera_state = CameraState::new();
+
+        let result = generate_default_matrix(
+                scale,
+                texture_size,
+                position,
+                origin,
+                target_size,
+                &camera_state
+            );
+
+        let desired = na::Matrix4::new(
+                2., 0., 0., 0.,
+                0., 4., 0., 0.,
+                0., 0., 1., 0.,
+                0., 0., 0., 1.
+            );
+
+        assert_eq!(desired, result);
+    }
+
+    #[test]
+    fn test_default_matrix_position_and_scale()
+    {
+        let scale = na::Vector2::new(2., 2.);
+        let texture_size = (100, 100);
+        let position = na::Vector2::new(50., 50.);
+        let origin = na::zero();
+        let target_size = (100, 50);
+        let camera_state = CameraState::new();
+
+        let result = generate_default_matrix(
+                scale,
+                texture_size,
+                position,
+                origin,
+                target_size,
+                &camera_state
+            );
+
+        let desired = na::Matrix4::new(
+                2., 0., 0., 0.5,
+                0., 4., 0., 1.,
+                0., 0., 1., 0.,
+                0., 0., 0., 1.
+            );
+
+        assert_eq!(desired, result);
+    }
+
+    fn test_default_matrix_position_scale_and_origin()
+    {
+        let scale = na::Vector2::new(2., 2.);
+        let texture_size = (100, 100);
+        let position = na::Vector2::new(50., 50.);
+        let origin = na::Vector2::new(0.5, 0.5);
+        let target_size = (100, 50);
+        let camera_state = CameraState::new();
+
+        let result = generate_default_matrix(
+                scale,
+                texture_size,
+                position,
+                origin,
+                target_size,
+                &camera_state
+            );
+
+        let position = na::Vector2::new(
+                (scale.x * texture_size.0 as f32 / target_size.0 as f32),
+                (scale.y * texture_size.1 as f32 / target_size.1 as f32)
+            );
+
+        let desired = na::Matrix4::new(
+                2., 0., 0., position.x,
+                0., 4., 0., position.y,
+                0., 0., 1., 0.,
+                0., 0., 0., 1.
+            );
+
+        assert_eq!(desired, result);
     }
 }
