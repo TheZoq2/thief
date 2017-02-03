@@ -49,6 +49,11 @@ impl CameraState
     {
         self.zoom = zoom;
     }
+
+    pub fn get_position(&self) -> na::Vector2<f32>
+    {
+        return self.position;
+    }
 }
 
 

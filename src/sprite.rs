@@ -107,6 +107,10 @@ impl Sprite
     {
         self.position = position;
     }
+    pub fn get_position(&self) -> na::Vector2<f32>
+    {
+        return self.position;
+    }
 
     pub fn set_origin(&mut self, origin: na::Vector2<f32>)
     {
@@ -198,8 +202,6 @@ pub fn generate_default_matrix(
     let final_matrix = (matrix + camera_state.get_position_matrix((target_width, target_height)))
         * camera_state.get_scaling_matrix() 
         * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32));
-
-    println!("{}", final_matrix);
 
     final_matrix
 }

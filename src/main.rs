@@ -170,10 +170,12 @@ pub fn run_selector()
     
 
     let mut t: f32 = 0.;
+
+    let mut mouse_pos = na::zero();
     loop {
         t += 0.05;
         //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
-        camera_state.set_position(na::Vector2::new((t*0.01).sin() * 300., 100.));
+        //camera_state.set_position(na::Vector2::new((t*0.01).sin() * 300., 100.));
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -185,6 +187,16 @@ pub fn run_selector()
         for ev in display.poll_events() {
             match ev {
                 glium::glutin::Event::Closed => return,
+                glium::glutin::Event::MouseMoved(x, y) => {
+                    let new_mouse = na::Vector2::new(x as f32, y as f32);
+                    let moved = new_mouse - mouse_pos;
+                    
+                    let new_pos = sprite.get_position() + moved;
+
+                    sprite.set_position(new_pos);
+
+                    mouse_pos = new_mouse;
+                },
                 _ => ()
             }
         }
