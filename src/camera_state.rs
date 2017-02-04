@@ -18,7 +18,7 @@ impl CameraState
 
     pub fn get_scaling_matrix(&self) -> na::Matrix4<f32>
     {
-        let scale = 1. / self.zoom;
+        let scale = self.zoom;
 
         na::Matrix4::new(
                 scale   , 0.      , 0., 0.,
@@ -30,7 +30,7 @@ impl CameraState
 
     pub fn get_position_matrix(&self, target_size: (u32, u32)) -> na::Matrix4<f32>
     {
-        let offset = -self.position / self.zoom;
+        let offset = -self.position * self.zoom;
 
         na::Matrix4::new(
                 0., 0., 0., offset.x / target_size.0 as f32,

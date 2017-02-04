@@ -60,6 +60,7 @@ pub struct Sprite
 {
     position: na::Vector2<f32>,
     scale: na::Vector2<f32>,
+    angle: f32,
     texture: Arc<SrgbTexture2d>,
     aspect_ratio: f32,
     depth: f32,
@@ -90,6 +91,7 @@ impl Sprite
         {
             position: na::zero(),
             scale: na::one(),
+            angle: 0.,
             texture: texture,
             aspect_ratio: aspect_ratio,
             depth: 0.,
@@ -121,6 +123,16 @@ impl Sprite
     {
         self.scale = scale;
     }
+
+    pub fn set_angle(&mut self, angle: f32)
+    {
+        self.angle = angle;
+    }
+    
+    pub fn get_angle(&self) -> f32
+    {
+        return self.angle;
+    }
 }
 
 impl drawable::Drawable for Sprite
@@ -133,6 +145,7 @@ impl drawable::Drawable for Sprite
                 , self.texture_size
                 , self.position
                 , self.origin
+                , self.angle
                 , target.get_dimensions()
                 , camera_state
             );
@@ -179,6 +192,7 @@ pub fn generate_default_matrix(
             texture_size: (u32, u32),
             position: na::Vector2<f32>,
             origin: na::Vector2<f32>,
+            angle: f32,
             target_size: (u32, u32),
             camera_state: &CameraState
         ) -> na::Matrix4<f32>
@@ -191,12 +205,18 @@ pub fn generate_default_matrix(
     let x_offset = (-scale_x * origin.x + position.x) / target_width as f32;
     let y_offset = (-scale_y * origin.y + position.y) / target_height as f32;
 
+    let rotation_matrix = na::Matrix4::new(
+            angle.cos(), -angle.sin(), 0., 0.,
+            angle.sin(), angle.cos(),  0., 0.,
+            0.         , 0.         ,  1., 0.,
+            0.         , 0.         ,  0., 1.
+        );
 
     let matrix = na::Matrix4::new(
-            scale_x, 0.     , 0., x_offset,
-            0.     , scale_y, 0., y_offset,
-            0.     , 0.     , 1., 0.,
-            0.     , 0.     , 0., 1.
+            scale_x * angle.cos(), -scale_y * angle.sin(), 0., x_offset,
+            scale_x * angle.sin(), scale_y * angle.cos() , 0., y_offset,
+            0.                   , 0.                    , 1., 0.,
+            0.                   , 0.                    , 0., 1.
         );
 
     let final_matrix = (matrix + camera_state.get_position_matrix((target_width, target_height)))
@@ -224,12 +244,14 @@ mod tests
         let origin = na::zero();
         let target_size = (100, 50);
         let camera_state = CameraState::new();
+        let angle = 0.;
 
         let result = generate_default_matrix(
                 scale,
                 texture_size,
                 position,
                 origin,
+                angle,
                 target_size,
                 &camera_state
             );
@@ -253,12 +275,14 @@ mod tests
         let origin = na::zero();
         let target_size = (100, 50);
         let camera_state = CameraState::new();
+        let angle = 0.;
 
         let result = generate_default_matrix(
                 scale,
                 texture_size,
                 position,
                 origin,
+                angle,
                 target_size,
                 &camera_state
             );
@@ -281,12 +305,14 @@ mod tests
         let origin = na::Vector2::new(0.5, 0.5);
         let target_size = (100, 50);
         let camera_state = CameraState::new();
+        let angle = 0.;
 
         let result = generate_default_matrix(
                 scale,
                 texture_size,
                 position,
                 origin,
+                angle,
                 target_size,
                 &camera_state
             );

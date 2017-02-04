@@ -4,6 +4,7 @@ extern crate x11;
 extern crate libc;
 extern crate nalgebra as na;
 extern crate image;
+extern crate time;
 
 #[macro_use]
 extern crate glium;
@@ -14,12 +15,15 @@ mod camera_state;
 mod constants;
 mod sprite;
 mod glium_types;
+mod line;
 
 use drawable::{Drawable};
 use sprite::{SpriteFactory};
 
 use x11::xlib;
 use std::mem;
+
+use line::Line;
 
 use std::sync::Arc;
 
@@ -141,6 +145,45 @@ pub fn load_texture<'a>(filename: &Path) -> RawImage2d<'a, u8>
 }
 
 
+fn generate_grid(display: &glium::Display) -> Vec<Line>
+{
+    let mut result = vec!();
+
+    let line_amount = 15;
+    let step = 100.;
+    
+    let other_start = -line_amount as f32 * step;
+    let other_end = -other_start as f32;
+    for pos in -line_amount..line_amount
+    {
+        let pos_float = pos as f32 * step;
+        let color = match pos
+        {
+            0 => (1., 1., 1., 1.),
+            _ => (0.25, 0.25, 0.25, 1.)
+        };
+
+        {
+            let start = na::Vector2::new(pos_float, other_start);
+            let end = na::Vector2::new(pos_float, other_end);
+
+            let line = line::Line::new(display, start, end)
+                .with_color(color);
+            result.push(line);
+        }
+        {
+            let start = na::Vector2::new(other_start, pos_float);
+            let end = na::Vector2::new(other_end, pos_float);
+
+            let line = line::Line::new(display, start, end)
+                .with_color(color);
+            result.push(line);
+        }
+    }
+
+    result
+}
+
 
 pub fn run_selector()
 {
@@ -161,24 +204,53 @@ pub fn run_selector()
 
     let mut camera_state = CameraState::new();
     camera_state.set_position(na::Vector2::new(0., 0.));
+    //camera_state.set_zoom(0.5);
 
-    
-    //sprite.set_position(na::Vector2::new(0.25, 0.25));
+
+    sprite.set_position(na::Vector2::new(0., 200.));
     //sprite.set_position(na::Vector2::new(0., 200.));
-    //sprite.set_origin(na::Vector2::new(0.00, 0.00));
+    sprite.set_origin(na::Vector2::new(1., 0.));
     sprite.set_scale(na::Vector2::new(6., 6.));
-    
+
+    let grid = generate_grid(&display);
+
 
     let mut t: f32 = 0.;
 
     let mut mouse_pos = na::zero();
+
+    let mut old_time = time::now();
     loop {
+        let now = time::now();
+        let time_since_last = now - old_time;
+        old_time = now;
+
+        let frametime_nanos = time_since_last.num_nanoseconds().unwrap();
+        let frametime_millis = time_since_last.num_milliseconds();
+        let fps = if frametime_nanos != 0 
+        {
+            1_000_000_000 / frametime_nanos
+        } else 
+        {
+            0
+        };
+        //println!("Elapsed time: {} ms, FPS: {}", frametime_millis, fps);
+
         t += 0.05;
         //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
         //camera_state.set_position(na::Vector2::new((t*0.01).sin() * 300., 100.));
+        sprite.set_angle(t * 0.05);
+        //sprite.set_angle(std::f32::consts::PI / 2.);
+
+        let line = Line::new(&display, na::Vector2::new(0., 0.), na::Vector2::new(100., 0.));
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
+
+        for line in &grid
+        {
+            line.draw(&mut target, &camera_state);
+        }
 
         sprite.draw(&mut target, &camera_state);
 
@@ -190,10 +262,12 @@ pub fn run_selector()
                 glium::glutin::Event::MouseMoved(x, y) => {
                     let new_mouse = na::Vector2::new(x as f32, y as f32);
                     let moved = new_mouse - mouse_pos;
-                    
-                    let new_pos = sprite.get_position() + moved;
 
-                    sprite.set_position(new_pos);
+                    //let new_pos = sprite.get_position() + moved;
+                    //let new_pos = camera_state.get_position() + moved;
+
+                    //sprite.set_position(new_pos);
+                    //camera_state.set_position(new_pos)
 
                     mouse_pos = new_mouse;
                 },

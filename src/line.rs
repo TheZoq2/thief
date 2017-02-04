@@ -21,10 +21,10 @@ pub const LINE_VERTEX_SHADER: &'static str = r#"
     "#;
 pub const LINE_FRAGMENT_SHADER: &'static str = r#"
         #version 140
+        uniform vec4 line_color;
         out vec4 color;
         void main() {
-            float brightness = 0.5;
-            color = vec4(brightness, brightness, brightness, 0.);
+            color = line_color;
         }
     "#;
 
@@ -32,6 +32,7 @@ pub struct Line
 {
     start: na::Vector2<f32>,
     end: na::Vector2<f32>,
+    color: (f32, f32, f32, f32),
     vertices: glium::VertexBuffer<Vertex>,
     shader: glium::Program,
 }
@@ -59,9 +60,16 @@ impl Line
         Line {
             start: start,
             end: end,
+            color: (1., 1., 1., 1.),
             vertices: vertex_buffer,
             shader: program
         }
+    }
+
+    pub fn with_color(mut self, color: (f32, f32, f32, f32)) -> Line
+    {
+        self.color = color;
+        self
     }
 }
 
@@ -74,11 +82,12 @@ impl Drawable for Line
         let matrix: na::Matrix4<f32> = na::one();
 
         let final_matrix = (matrix + camera_state.get_position_matrix((target_width, target_height)))
-            * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32))
-            * camera_state.get_scaling_matrix();
+            * camera_state.get_scaling_matrix()
+            * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32));
         
         let uniforms = uniform! {
             matrix: *final_matrix.as_ref(),
+            line_color: self.color
         };
 
         let params = glium::draw_parameters::DrawParameters{
