@@ -40,6 +40,15 @@ impl CameraState
             )
     }
 
+    //TODO: Refactor if get_scaling and get_position are unnessecairy
+    pub fn get_matrix(&self, target_size: (u32, u32)) -> na::Matrix4<f32>
+    {
+        let position = self.get_position_matrix(target_size) + na::one::<na::Matrix4<f32>>();
+        let scale = self.get_scaling_matrix();
+
+        position * scale
+    }
+
     pub fn set_position(&mut self, new_pos: na::Vector2<f32>)
     {
         self.position = new_pos;

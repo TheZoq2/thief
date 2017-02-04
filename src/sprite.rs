@@ -150,6 +150,8 @@ impl drawable::Drawable for Sprite
                 , camera_state
             );
 
+
+
         let uniforms = uniform! {
             matrix: *matrix.as_ref(),
             tex: &*self.texture,
@@ -205,13 +207,6 @@ pub fn generate_default_matrix(
     let x_offset = (-scale_x * origin.x + position.x) / target_width as f32;
     let y_offset = (-scale_y * origin.y + position.y) / target_height as f32;
 
-    let rotation_matrix = na::Matrix4::new(
-            angle.cos(), -angle.sin(), 0., 0.,
-            angle.sin(), angle.cos(),  0., 0.,
-            0.         , 0.         ,  1., 0.,
-            0.         , 0.         ,  0., 1.
-        );
-
     let matrix = na::Matrix4::new(
             scale_x * angle.cos(), -scale_y * angle.sin(), 0., x_offset,
             scale_x * angle.sin(), scale_y * angle.cos() , 0., y_offset,
@@ -219,10 +214,15 @@ pub fn generate_default_matrix(
             0.                   , 0.                    , 0., 1.
         );
 
-    let final_matrix = (matrix + camera_state.get_position_matrix((target_width, target_height)))
-        * camera_state.get_scaling_matrix() 
-        * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32));
+    let world_matrix = camera_state.get_matrix(target_size)
+        * drawing_util::get_window_scaling_matrix(
+                    (target_size.0 as f32, target_size.1 as f32)
+                );
 
+    let final_matrix = world_matrix
+            * matrix;
+
+    //final_matrix
     final_matrix
 }
 
