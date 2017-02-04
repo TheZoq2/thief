@@ -1,0 +1,94 @@
+extern crate nalgebra as na;
+
+use camera_state::CameraState;
+
+use glium;
+use glium::Surface;
+
+use glium_types::{Vertex};
+
+use drawable::Drawable;
+use drawing_util;
+
+
+pub const LINE_VERTEX_SHADER: &'static str = r#"
+        #version 140
+        in vec2 position;
+        uniform mat4 matrix;
+        void main() {
+            gl_Position = matrix * vec4(position, 0.0, 1.0);
+        }
+    "#;
+pub const LINE_FRAGMENT_SHADER: &'static str = r#"
+        #version 140
+        out vec4 color;
+        void main() {
+            float brightness = 0.5;
+            color = vec4(brightness, brightness, brightness, 0.);
+        }
+    "#;
+
+pub struct Line
+{
+    start: na::Vector2<f32>,
+    end: na::Vector2<f32>,
+    vertices: glium::VertexBuffer<Vertex>,
+    shader: glium::Program,
+}
+
+impl Line
+{
+    pub fn new(display: &glium::Display, start: na::Vector2<f32>, end: na::Vector2<f32>) -> Line
+    {
+        let shape = vec!(
+                //First triangle
+                Vertex { position: (start.x, start.y), tex_coords: (0., 0.) },
+                Vertex { position: (end.x, end.y), tex_coords: (0., 1.) },
+                Vertex { position: (start.x, start.y), tex_coords: (1., 0.) },
+            );
+
+        let vertex_buffer = glium::VertexBuffer::new(display, &shape).unwrap();
+
+        let program = glium::Program::from_source(
+                    display, 
+                    LINE_VERTEX_SHADER, 
+                    LINE_FRAGMENT_SHADER, 
+                    None
+                ).unwrap();
+
+        Line {
+            start: start,
+            end: end,
+            vertices: vertex_buffer,
+            shader: program
+        }
+    }
+}
+
+impl Drawable for Line
+{
+    fn draw(&self, target: &mut glium::Frame, camera_state: &CameraState)
+    {
+        let (target_width, target_height) = target.get_dimensions();
+
+        let matrix: na::Matrix4<f32> = na::one();
+
+        let final_matrix = (matrix + camera_state.get_position_matrix((target_width, target_height)))
+            * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32))
+            * camera_state.get_scaling_matrix();
+        
+        let uniforms = uniform! {
+            matrix: *final_matrix.as_ref(),
+        };
+
+        let params = glium::draw_parameters::DrawParameters{
+            polygon_mode: glium::draw_parameters::PolygonMode::Line,
+            .. Default::default()
+        };
+
+        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+
+        target.draw(&self.vertices, &indices, &self.shader, &uniforms,
+                    &params).unwrap();
+    }
+}
