@@ -204,14 +204,28 @@ pub fn generate_default_matrix(
     let scale_x = scale.x * texture_size.0 as f32;
     let scale_y = scale.y * texture_size.1 as f32;
 
-    let x_offset = (-scale_x * origin.x + position.x) / target_width as f32;
-    let y_offset = (-scale_y * origin.y + position.y) / target_height as f32;
+    let x_offset = (-scale_x * origin.x + position.x);
+    let y_offset = (-scale_y * origin.y + position.y);
 
-    let matrix = na::Matrix4::new(
-            scale_x * angle.cos(), -scale_y * angle.sin(), 0., x_offset,
-            scale_x * angle.sin(), scale_y * angle.cos() , 0., y_offset,
+    let local_translation_matrix = na::Matrix4::new(
+            1., 0., 0., -origin.x,
+            0., 1., 0., -origin.y,
+            0., 0., 1., 0.,
+            0., 0., 0., 1.
+        );
+
+    let local_matrix = na::Matrix4::new(
+            scale_x * angle.cos(), -scale_y * angle.sin(), 0., 0.,
+            scale_x * angle.sin(), scale_y * angle.cos() , 0., 0.,
             0.                   , 0.                    , 1., 0.,
             0.                   , 0.                    , 0., 1.
+        ) * local_translation_matrix;
+
+    let global_translation_matrix = na::Matrix4::new(
+            1., 0., 0., position.x,
+            0., 1., 0., position.y,
+            0., 0., 1., 0.,
+            0., 0., 0., 1.
         );
 
     let world_matrix = camera_state.get_matrix(target_size)
@@ -219,8 +233,7 @@ pub fn generate_default_matrix(
                     (target_size.0 as f32, target_size.1 as f32)
                 );
 
-    let final_matrix = world_matrix
-            * matrix;
+    let final_matrix = world_matrix * global_translation_matrix * local_matrix;
 
     //final_matrix
     final_matrix

@@ -207,9 +207,9 @@ pub fn run_selector()
     //camera_state.set_zoom(0.5);
 
 
-    sprite.set_position(na::Vector2::new(0., 200.));
+    sprite.set_position(na::Vector2::new(100., 100.));
     //sprite.set_position(na::Vector2::new(0., 200.));
-    sprite.set_origin(na::Vector2::new(1., 0.));
+    sprite.set_origin(na::Vector2::new(0.5, 0.5));
     sprite.set_scale(na::Vector2::new(6., 6.));
 
     let grid = generate_grid(&display);
@@ -263,10 +263,10 @@ pub fn run_selector()
                     let new_mouse = na::Vector2::new(x as f32, y as f32);
                     let moved = new_mouse - mouse_pos;
 
-                    //let new_pos = sprite.get_position() + moved;
+                    let new_pos = sprite.get_position() + moved;
                     //let new_pos = camera_state.get_position() + moved;
 
-                    //sprite.set_position(new_pos);
+                    sprite.set_position(new_mouse);
                     //camera_state.set_position(new_pos)
 
                     mouse_pos = new_mouse;
