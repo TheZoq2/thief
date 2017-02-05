@@ -79,11 +79,10 @@ impl Drawable for Line
     {
         let (target_width, target_height) = target.get_dimensions();
 
-        let matrix: na::Matrix4<f32> = na::one();
-
-        let final_matrix = (matrix + camera_state.get_position_matrix((target_width, target_height)))
-            * camera_state.get_scaling_matrix()
+        let world_matrix = camera_state.get_matrix()
             * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32));
+
+        let final_matrix = world_matrix;
         
         let uniforms = uniform! {
             matrix: *final_matrix.as_ref(),

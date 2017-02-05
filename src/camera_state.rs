@@ -16,37 +16,16 @@ impl CameraState
         }
     }
 
-    pub fn get_scaling_matrix(&self) -> na::Matrix4<f32>
-    {
-        let scale = self.zoom;
-
-        na::Matrix4::new(
-                scale   , 0.      , 0., 0.,
-                0.      , scale   , 0., 0.,
-                0.      , 0.      , 1., 0.,
-                0.      , 0.      , 0., 1.,
-            )
-    }
-
-    pub fn get_position_matrix(&self, target_size: (u32, u32)) -> na::Matrix4<f32>
+    pub fn get_matrix(&self) -> na::Matrix4<f32>
     {
         let offset = -self.position * self.zoom;
 
         na::Matrix4::new(
-                0., 0., 0., offset.x / target_size.0 as f32,
-                0., 0., 0., offset.y / target_size.1 as f32,
-                0., 0., 0., 0.,
-                0., 0., 0., 0.
+                self.zoom, 0.       , 0., offset.x,
+                0.       , self.zoom, 0., offset.y,
+                0.       , 0.       , 1., 0.,
+                0.       , 0.       , 0., 1.,
             )
-    }
-
-    //TODO: Refactor if get_scaling and get_position are unnessecairy
-    pub fn get_matrix(&self, target_size: (u32, u32)) -> na::Matrix4<f32>
-    {
-        let position = self.get_position_matrix(target_size) + na::one::<na::Matrix4<f32>>();
-        let scale = self.get_scaling_matrix();
-
-        position * scale
     }
 
     pub fn set_position(&mut self, new_pos: na::Vector2<f32>)

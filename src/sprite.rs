@@ -199,13 +199,8 @@ pub fn generate_default_matrix(
             camera_state: &CameraState
         ) -> na::Matrix4<f32>
 {
-    let (target_width, target_height) = target_size;
-
     let scale_x = scale.x * texture_size.0 as f32;
     let scale_y = scale.y * texture_size.1 as f32;
-
-    let x_offset = (-scale_x * origin.x + position.x);
-    let y_offset = (-scale_y * origin.y + position.y);
 
     let local_translation_matrix = na::Matrix4::new(
             1., 0., 0., -origin.x,
@@ -228,7 +223,7 @@ pub fn generate_default_matrix(
             0., 0., 0., 1.
         );
 
-    let world_matrix = camera_state.get_matrix(target_size)
+    let world_matrix = camera_state.get_matrix()
         * drawing_util::get_window_scaling_matrix(
                     (target_size.0 as f32, target_size.1 as f32)
                 );

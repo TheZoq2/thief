@@ -190,7 +190,7 @@ pub fn run_selector()
     use glium::{DisplayBuild, Surface};
     let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
 
-    let screenshot = capture_screenshot();
+    //let screenshot = capture_screenshot();
 
     //let image = screenshot.get_glium_image();
     //let image = RawImage2d::from_raw_rgba(image::open(&Path::new("media/fir1.png")).unwrap().raw_pixels());
@@ -210,7 +210,7 @@ pub fn run_selector()
     sprite.set_position(na::Vector2::new(100., 100.));
     //sprite.set_position(na::Vector2::new(0., 200.));
     sprite.set_origin(na::Vector2::new(0.5, 0.5));
-    sprite.set_scale(na::Vector2::new(6., 6.));
+    sprite.set_scale(na::Vector2::new(1., 1.));
 
     let grid = generate_grid(&display);
 
@@ -219,8 +219,10 @@ pub fn run_selector()
 
     let mut mouse_pos = na::zero();
 
-    let mut old_time = time::now();
+    //let mut old_time = time::now();
     loop {
+        //XXX Enable for FPS counter
+        /*
         let now = time::now();
         let time_since_last = now - old_time;
         old_time = now;
@@ -234,15 +236,13 @@ pub fn run_selector()
         {
             0
         };
-        //println!("Elapsed time: {} ms, FPS: {}", frametime_millis, fps);
+        println!("Elapsed time: {} ms, FPS: {}", frametime_millis, fps);
+        */
+
+        //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
+        sprite.set_angle(t * 0.05);
 
         t += 0.05;
-        //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
-        //camera_state.set_position(na::Vector2::new((t*0.01).sin() * 300., 100.));
-        sprite.set_angle(t * 0.05);
-        //sprite.set_angle(std::f32::consts::PI / 2.);
-
-        let line = Line::new(&display, na::Vector2::new(0., 0.), na::Vector2::new(100., 0.));
 
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -263,11 +263,11 @@ pub fn run_selector()
                     let new_mouse = na::Vector2::new(x as f32, y as f32);
                     let moved = new_mouse - mouse_pos;
 
-                    let new_pos = sprite.get_position() + moved;
+                    //let new_pos = sprite.get_position() + moved;
                     //let new_pos = camera_state.get_position() + moved;
 
                     sprite.set_position(new_mouse);
-                    //camera_state.set_position(new_pos)
+                    //camera_state.set_position(new_mouse);
 
                     mouse_pos = new_mouse;
                 },
