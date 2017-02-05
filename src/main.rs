@@ -16,6 +16,7 @@ mod constants;
 mod sprite;
 mod glium_types;
 mod line;
+mod rendering;
 
 use drawable::{Drawable};
 use sprite::{SpriteFactory};
