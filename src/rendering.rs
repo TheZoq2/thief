@@ -2,10 +2,10 @@ use glium::texture::texture2d::Texture2d;
 use glium::framebuffer::SimpleFrameBuffer;
 use glium::backend::Facade;
 
-use std::vec::Vec;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
+#[derive(Clone, Eq, PartialEq, Hash)]
 enum DefaultRenderStep
 {
     Diffuse,
@@ -32,8 +32,8 @@ impl<T, F> RenderProcess<T, F>
         }
     }
 
-    pub fn generate_targets(&self, facade: &Facade, resolution: (u32, u32)) 
-            -> HashMap<T, SimpleFrameBuffer>
+    pub fn generate_target_textures(&self, facade: &Facade, resolution: (u32, u32)) 
+            -> HashMap<T, Texture2d>
     {
         let mut result = HashMap::new();
 
@@ -42,9 +42,7 @@ impl<T, F> RenderProcess<T, F>
             let texture = Texture2d::empty(facade, resolution.0, resolution.1)
                     .unwrap();
 
-            let surface = texture.as_surface();
-
-            result.insert(step.clone(), surface);
+            result.insert(step.clone(), texture);
         }
 
         result
