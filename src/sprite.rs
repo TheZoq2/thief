@@ -1,4 +1,3 @@
-
 extern crate nalgebra as na;
 
 use glium;
@@ -139,7 +138,6 @@ impl drawable::Drawable for Sprite
 {
     fn draw(&self, target: &mut glium::Frame, camera_state: &CameraState)
     {
-
         let matrix = generate_default_matrix(
                 self.scale
                 , self.texture_size
