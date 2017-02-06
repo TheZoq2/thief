@@ -1,7 +1,7 @@
 use glium::texture::texture2d::Texture2d;
 use glium::framebuffer::SimpleFrameBuffer;
 use glium::backend::Facade;
-use glium::uniforms::Uniforms;
+use glium::uniforms::{Uniforms, AsUniformValue, UniformsStorage};
 use glium::{Program, VertexBuffer, Display};
 
 use std::collections::{HashMap, HashSet};
@@ -41,9 +41,11 @@ enum DefaultRenderStep
 //        })
 //}
 
-struct RenderProcess<T, F> 
-    where F: Fn(&HashMap<T, Texture2d>) -> Box<Uniforms>,
-          T: Eq + PartialEq + Hash + Clone
+struct RenderProcess<'n, T, F, UT, UR>
+    where F: Fn(&HashMap<T, Texture2d>) -> UniformsStorage<'n, UT, UR>,
+          T: Eq + PartialEq + Hash + Clone,
+          UT: AsUniformValue,
+          UR: Uniforms
 {
     steps: HashSet<T>,
     uniform_function: F,
@@ -52,17 +54,19 @@ struct RenderProcess<T, F>
     shader: Program,
 }
 
-impl<T, F> RenderProcess<T, F>
-    where F: Fn(&HashMap<T, Texture2d>) -> Box<Uniforms>,
-          T: Eq + PartialEq + Hash + Clone
+impl<'n, T, F, UT, UR> RenderProcess<'n, T, F, UT, UR>
+    where F: Fn(&HashMap<T, Texture2d>) -> UniformsStorage<'n, UT, UR>,
+          T: Eq + PartialEq + Hash + Clone,
+          UT: AsUniformValue,
+          UR: Uniforms
 {
     pub fn new(
                 display: &Display,
                 steps: HashSet<T>,
-                combine_function: F,
+                uniform_function: F,
                 fragment_source: &str
             )
-            -> RenderProcess<T, F>
+            -> RenderProcess<'n, T, F, UT, UR>
     {
         let shape = vec!(
                 //First triangle
@@ -86,7 +90,7 @@ impl<T, F> RenderProcess<T, F>
 
         RenderProcess {
             steps: steps,
-            combine_function: combine_function,
+            uniform_function: uniform_function,
 
             vertices: vertices,
             shader: shader
