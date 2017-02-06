@@ -6,6 +6,7 @@ use glium::{Program, VertexBuffer, Display};
 
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use std::boxed::Box;
 
 use glium_types::Vertex;
 
@@ -28,29 +29,31 @@ enum DefaultRenderStep
     Emissive,
 }
 
-//fn default_render_function(
+//fn default_uniform_generator_function(
 //            targets: HashMap<DefaultRenderStep, Texture2d>,
-//            frame: &mut glium::Frame,
-//            vertices: &glium::VertexBuffer,
-//            program: &glium::Program
 //        )
+//    -> Box<Uniforms>
 //{
-//
+//        Box::new(uniform! {
+//            diffuse_texture: targets[DefaultRenderStep::Diffuse].unwrap(),
+//            emissive_texture: targets[DefaultRenderStep::Emissive].unwrap(),
+//            ambient_light: 0.25 as f32
+//        })
 //}
 
 struct RenderProcess<T, F> 
-    where F: Fn(&HashMap<T, Texture2d>),
+    where F: Fn(&HashMap<T, Texture2d>) -> Box<Uniforms>,
           T: Eq + PartialEq + Hash + Clone
 {
     steps: HashSet<T>,
-    combine_function: F,
+    uniform_function: F,
 
     vertices: VertexBuffer<Vertex>,
     shader: Program,
 }
 
 impl<T, F> RenderProcess<T, F>
-    where F: Fn(&HashMap<T, Texture2d>),
+    where F: Fn(&HashMap<T, Texture2d>) -> Box<Uniforms>,
           T: Eq + PartialEq + Hash + Clone
 {
     pub fn new(
