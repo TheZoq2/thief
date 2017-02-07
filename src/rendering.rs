@@ -21,7 +21,6 @@ pub const DEFAULT_VERTEX_SHADER: &'static str = r#"
         }
     "#;
 
-
 #[derive(Clone, Eq, PartialEq, Hash)]
 enum DefaultRenderStep
 {
@@ -29,44 +28,52 @@ enum DefaultRenderStep
     Emissive,
 }
 
-//fn default_uniform_generator_function(
-//            targets: HashMap<DefaultRenderStep, Texture2d>,
-//        )
-//    -> Box<Uniforms>
-//{
-//        Box::new(uniform! {
-//            diffuse_texture: targets[DefaultRenderStep::Diffuse].unwrap(),
-//            emissive_texture: targets[DefaultRenderStep::Emissive].unwrap(),
-//            ambient_light: 0.25 as f32
-//        })
-//}
+#[uniform]
+struct DefaultUniforms
+{
+    diffuse_texture: Texture2d,
+    emissive_texture: Texture2d,
+    ambient: f32,
+}
 
-struct RenderProcess<'n, T, F, UT, UR>
-    where F: Fn(&HashMap<T, Texture2d>) -> UniformsStorage<'n, UT, UR>,
-          T: Eq + PartialEq + Hash + Clone,
-          UT: AsUniformValue,
-          UR: Uniforms
+impl DefaultUniforms
+{
+    fn from_hash_map(map: HashMap<DefaultRenderStep, Texture2d>, ambient: f32) 
+            -> DefaultUniforms
+    {
+        DefaultUniforms
+        {
+            diffuse_texture: map[&DefaultRenderStep::Diffuse],
+            emissive_texture: map[&DefaultRenderStep::Emissive],
+            ambient: ambient
+        }
+    }
+}
+
+
+
+struct RenderProcess<T, U>
+    where T: Eq + PartialEq + Hash + Clone,
+          U: Uniforms
 {
     steps: HashSet<T>,
-    uniform_function: F,
+    uniforms: U,
 
     vertices: VertexBuffer<Vertex>,
     shader: Program,
 }
 
-impl<'n, T, F, UT, UR> RenderProcess<'n, T, F, UT, UR>
-    where F: Fn(&HashMap<T, Texture2d>) -> UniformsStorage<'n, UT, UR>,
-          T: Eq + PartialEq + Hash + Clone,
-          UT: AsUniformValue,
-          UR: Uniforms
+impl<T, U> RenderProcess<T, U>
+    where T: Eq + PartialEq + Hash + Clone,
+          U: Uniforms
 {
     pub fn new(
                 display: &Display,
                 steps: HashSet<T>,
-                uniform_function: F,
+                uniforms: U,
                 fragment_source: &str
             )
-            -> RenderProcess<'n, T, F, UT, UR>
+            -> RenderProcess<T, U>
     {
         let shape = vec!(
                 //First triangle
@@ -90,7 +97,7 @@ impl<'n, T, F, UT, UR> RenderProcess<'n, T, F, UT, UR>
 
         RenderProcess {
             steps: steps,
-            uniform_function: uniform_function,
+            uniforms: uniforms,
 
             vertices: vertices,
             shader: shader

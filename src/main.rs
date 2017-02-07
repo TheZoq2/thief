@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+#![feature(custom_attribute)]
+
 extern crate x11;
 extern crate libc;
 extern crate nalgebra as na;
