@@ -21,6 +21,13 @@ pub const DEFAULT_VERTEX_SHADER: &'static str = r#"
         }
     "#;
 
+trait RenderTargets<T>
+    where T: Clone + Eq + PartialEq + Hash
+{
+    fn get_render_target<'a>(&self, target: T) -> &Texture2d;
+}
+
+
 #[derive(Clone, Eq, PartialEq, Hash)]
 enum DefaultRenderStep
 {
@@ -38,23 +45,26 @@ struct DefaultUniforms
 
 impl DefaultUniforms
 {
-    fn from_hash_map(map: HashMap<DefaultRenderStep, Texture2d>, ambient: f32) 
-            -> DefaultUniforms
+}
+
+impl RenderTargets<DefaultRenderStep> for DefaultUniforms
+{
+    fn get_render_target(&self, target: DefaultRenderStep) -> &Texture2d
     {
-        DefaultUniforms
+        match target
         {
-            diffuse_texture: map[&DefaultRenderStep::Diffuse],
-            emissive_texture: map[&DefaultRenderStep::Emissive],
-            ambient: ambient
+            DefaultRenderStep::Diffuse => &self.diffuse_texture,
+            DefaultRenderStep::Emissive => &self.emissive_texture
         }
     }
 }
 
 
 
+
 struct RenderProcess<T, U>
     where T: Eq + PartialEq + Hash + Clone,
-          U: Uniforms
+          U: Uniforms + RenderTargets<T>
 {
     steps: HashSet<T>,
     uniforms: U,
@@ -65,7 +75,7 @@ struct RenderProcess<T, U>
 
 impl<T, U> RenderProcess<T, U>
     where T: Eq + PartialEq + Hash + Clone,
-          U: Uniforms
+          U: Uniforms + RenderTargets<T>
 {
     pub fn new(
                 display: &Display,
@@ -120,5 +130,4 @@ impl<T, U> RenderProcess<T, U>
         result
     }
 }
-
 
