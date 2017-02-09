@@ -1,5 +1,4 @@
 use glium::texture::texture2d::Texture2d;
-use glium::framebuffer::SimpleFrameBuffer;
 use glium::backend::Facade;
 use glium::uniforms::{Uniforms, AsUniformValue, UniformsStorage};
 use glium::{Program, VertexBuffer, Display};
@@ -45,6 +44,16 @@ struct DefaultUniforms
 
 impl DefaultUniforms
 {
+    pub fn new(&self, facade: &Facade, resolution: (u32, u32)) -> DefaultUniforms
+    {
+        DefaultUniforms {
+            diffuse_texture: Texture2d::empty(facade, resolution.0, resolution.1)
+                .unwrap(),
+            emissive_texture: Texture2d::empty(facade, resolution.0, resolution.1)
+                .unwrap(),
+            ambient: 0.
+        }
+    }
 }
 
 impl RenderTargets<DefaultRenderStep> for DefaultUniforms
