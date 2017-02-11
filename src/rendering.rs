@@ -2,6 +2,9 @@ use glium::texture::texture2d::Texture2d;
 use glium::backend::Facade;
 use glium::uniforms::{Uniforms, AsUniformValue, UniformsStorage};
 use glium::{Program, VertexBuffer, Display};
+use glium::framebuffer::SimpleFrameBuffer;
+use glium;
+use glium::Surface;
 
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -23,28 +26,42 @@ pub const DEFAULT_VERTEX_SHADER: &'static str = r#"
 trait RenderTargets<T>
     where T: Clone + Eq + PartialEq + Hash
 {
-    fn get_render_target<'a>(&self, target: T) -> &Texture2d;
+    fn get_render_target<'a>(&self, target: &T) -> SimpleFrameBuffer;
 }
 
 
 #[derive(Clone, Eq, PartialEq, Hash)]
-enum DefaultRenderStep
+pub enum DefaultRenderStep
 {
     Diffuse,
     Emissive,
 }
 
-#[uniform]
-struct DefaultUniforms
+//TODO: Make a trait for this
+impl DefaultRenderStep
+{
+    pub fn get_hash_set() -> HashSet<DefaultRenderStep>
+    {
+        let set = HashSet::new();
+
+        set.insert(DefaultRenderStep::Diffuse);
+        set.insert(DefaultRenderStep::Emissive);
+
+        set
+    }
+}
+
+pub struct DefaultUniforms
 {
     diffuse_texture: Texture2d,
     emissive_texture: Texture2d,
     ambient: f32,
 }
+implement_uniform_block!(DefaultUniforms, diffuse_texture, emissive_texture, ambient);
 
 impl DefaultUniforms
 {
-    pub fn new(&self, facade: &Facade, resolution: (u32, u32)) -> DefaultUniforms
+    pub fn new(facade: &Facade, resolution: (u32, u32)) -> DefaultUniforms
     {
         DefaultUniforms {
             diffuse_texture: Texture2d::empty(facade, resolution.0, resolution.1)
@@ -58,12 +75,12 @@ impl DefaultUniforms
 
 impl RenderTargets<DefaultRenderStep> for DefaultUniforms
 {
-    fn get_render_target(&self, target: DefaultRenderStep) -> &Texture2d
+    fn get_render_target(&self, target: &DefaultRenderStep) -> SimpleFrameBuffer
     {
-        match target
+        match *target
         {
-            DefaultRenderStep::Diffuse => &self.diffuse_texture,
-            DefaultRenderStep::Emissive => &self.emissive_texture
+            DefaultRenderStep::Diffuse => self.diffuse_texture.as_surface(),
+            DefaultRenderStep::Emissive => self.emissive_texture.as_surface()
         }
     }
 }
@@ -71,7 +88,7 @@ impl RenderTargets<DefaultRenderStep> for DefaultUniforms
 
 
 
-struct RenderProcess<T, U>
+pub struct RenderProcess<T, U>
     where T: Eq + PartialEq + Hash + Clone,
           U: Uniforms + RenderTargets<T>
 {
@@ -123,20 +140,22 @@ impl<T, U> RenderProcess<T, U>
         }
     }
 
-    pub fn generate_target_textures(&self, facade: &Facade, resolution: (u32, u32)) 
-            -> HashMap<T, Texture2d>
+    pub fn get_targets(&self) -> HashMap<T, SimpleFrameBuffer>
     {
-        let mut result = HashMap::new();
-
+        let mut map = HashMap::new();
         for step in &self.steps
         {
-            let texture = Texture2d::empty(facade, resolution.0, resolution.1)
-                    .unwrap();
-
-            result.insert(step.clone(), texture);
+            map.insert(step.clone(), self.uniforms.get_render_target(step));
         }
-
-        result
+        map
     }
+
+    pub fn draw_to_display(&self, target: &mut glium::Frame)
+    {
+        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+        target.draw(&self.vertices, &indices, &self.shader, &self.uniforms,
+                    &Default::default()).unwrap();
+    }
+
 }
 

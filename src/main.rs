@@ -38,6 +38,8 @@ use glium_types::{Pixel};
 
 use std::path::Path;
 
+use rendering::{RenderProcess, DefaultRenderStep, DefaultUniforms};
+
 
 pub struct Screenshot
 {
@@ -193,6 +195,7 @@ pub fn run_selector()
     use glium::{DisplayBuild, Surface};
     let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
 
+
     //let screenshot = capture_screenshot();
 
     //let image = screenshot.get_glium_image();
@@ -217,6 +220,13 @@ pub fn run_selector()
 
     let grid = generate_grid(&display);
 
+    let target_uniforms = DefaultUniforms::new(&display, display.get_framebuffer_dimensions());
+    let render_process = RenderProcess::new(
+            &display,
+            DefaultRenderStep::get_hash_set(),
+            target_uniforms,
+            DEFAULT_FRAGMENT_SHADER
+        );
 
     let mut t: f32 = 0.;
 
@@ -241,6 +251,8 @@ pub fn run_selector()
         };
         println!("Elapsed time: {} ms, FPS: {}", frametime_millis, fps);
         */
+
+        let target_surfaces = target_uniforms;
 
         //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
         sprite.set_angle(t * 0.05);
