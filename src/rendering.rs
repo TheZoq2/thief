@@ -57,7 +57,6 @@ pub struct DefaultUniforms
     emissive_texture: Texture2d,
     ambient: f32,
 }
-implement_uniform_block!(DefaultUniforms, diffuse_texture, emissive_texture, ambient);
 
 impl DefaultUniforms
 {
@@ -86,30 +85,55 @@ impl RenderTargets<DefaultRenderStep> for DefaultUniforms
 }
 
 
+fn default_render_function(
+            target: &mut glium::Frame,
+            uniforms: &DefaultUniforms,
+            vertex_buffer: &VertexBuffer<Vertex>,
+            shader: &Program
+        )
+{
+    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+
+    let uniform_object = uniform!{
+        diffuse_texture: &uniforms.diffuse_texture,
+        emissive_texture: &uniforms.emissive_texture,
+        ambient: &uniforms.ambient
+    };
 
 
-pub struct RenderProcess<T, U>
+    target.draw(vertex_buffer, &indices, shader, &uniform_object,
+                &Default::default()).unwrap();
+}
+
+
+
+pub struct RenderProcess<T, U, F>
     where T: Eq + PartialEq + Hash + Clone,
-          U: Uniforms + RenderTargets<T>
+          U: Uniforms + RenderTargets<T>,
+          F: Fn(&glium::Frame, &U, &VertexBuffer<Vertex>, &Program)
 {
     steps: HashSet<T>,
     uniforms: U,
 
     vertices: VertexBuffer<Vertex>,
     shader: Program,
+
+    render_function: F
 }
 
-impl<T, U> RenderProcess<T, U>
+impl<T, U, F> RenderProcess<T, U, F>
     where T: Eq + PartialEq + Hash + Clone,
-          U: Uniforms + RenderTargets<T>
+          U: Uniforms + RenderTargets<T>,
+          F: Fn(&mut glium::Frame, &U, &VertexBuffer<Vertex>, &Program)
 {
     pub fn new(
                 display: &Display,
                 steps: HashSet<T>,
                 uniforms: U,
-                fragment_source: &str
+                fragment_source: &str,
+                render_function: F
             )
-            -> RenderProcess<T, U>
+            -> RenderProcess<T, U, F>
     {
         let shape = vec!(
                 //First triangle
@@ -136,7 +160,8 @@ impl<T, U> RenderProcess<T, U>
             uniforms: uniforms,
 
             vertices: vertices,
-            shader: shader
+            shader: shader,
+            render_function: render_function
         }
     }
 
@@ -152,9 +177,7 @@ impl<T, U> RenderProcess<T, U>
 
     pub fn draw_to_display(&self, target: &mut glium::Frame)
     {
-        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-        target.draw(&self.vertices, &indices, &self.shader, &self.uniforms,
-                    &Default::default()).unwrap();
+        render_function(target, &self.uniforms, &self.vertices, &self.shader);
     }
 
 }
