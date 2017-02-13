@@ -3,6 +3,7 @@ extern crate nalgebra as na;
 use glium;
 use glium::texture::SrgbTexture2d;
 use glium::Surface;
+use glium::framebuffer::SimpleFrameBuffer;
 
 use std::sync::Arc;
 
@@ -136,7 +137,7 @@ impl Sprite
 
 impl drawable::Drawable for Sprite
 {
-    fn draw(&self, target: &mut glium::Frame, camera_state: &CameraState)
+    fn draw(&self, target: &mut SimpleFrameBuffer, camera_state: &CameraState)
     {
         let matrix = generate_default_matrix(
                 self.scale

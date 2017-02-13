@@ -233,6 +233,8 @@ pub fn run_selector()
 
     let mut mouse_pos = na::zero();
 
+    let mut render_targets = render_process.get_targets();
+
     //let mut old_time = time::now();
     loop {
         //XXX Enable for FPS counter
@@ -253,6 +255,11 @@ pub fn run_selector()
         println!("Elapsed time: {} ms, FPS: {}", frametime_millis, fps);
         */
 
+        for (_, target) in &mut render_targets
+        {
+            target.clear_color(0., 0., 0., 0.);
+        }
+
 
         //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
         sprite.set_angle(t * 0.05);
@@ -264,10 +271,13 @@ pub fn run_selector()
 
         for line in &grid
         {
-            line.draw(&mut target, &camera_state);
+            line.draw(&mut render_targets.get_mut(&DefaultRenderStep::Emissive).unwrap(), &camera_state);
         }
 
-        sprite.draw(&mut target, &camera_state);
+        //sprite.draw(&mut target, &camera_state);
+        sprite.draw(&mut render_targets.get_mut(&DefaultRenderStep::Diffuse).unwrap(), &camera_state);
+
+        render_process.draw_to_display(&mut target);
 
         target.finish().unwrap();
 

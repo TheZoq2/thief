@@ -4,6 +4,7 @@ use camera_state::CameraState;
 
 use glium;
 use glium::Surface;
+use glium::framebuffer::SimpleFrameBuffer;
 
 use glium_types::{Vertex};
 
@@ -75,7 +76,7 @@ impl Line
 
 impl Drawable for Line
 {
-    fn draw(&self, target: &mut glium::Frame, camera_state: &CameraState)
+    fn draw(&self, target: &mut SimpleFrameBuffer, camera_state: &CameraState)
     {
         let (target_width, target_height) = target.get_dimensions();
 

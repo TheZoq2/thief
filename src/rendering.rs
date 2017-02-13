@@ -14,9 +14,10 @@ pub const DEFAULT_FRAGMENT_SHADER: &'static str = r#"
         #version 140
         in vec2 v_tex_coords;
         out vec4 color;
-        uniform sampler2D tex;
+        uniform sampler2D diffuse_texture;
+        uniform sampler2D emissive_texture;
         void main() {
-            color = texture(tex, v_tex_coords);
+            color = texture(diffuse_texture, v_tex_coords) + texture(emissive_texture, v_tex_coords);
         }
     "#;
 
@@ -27,7 +28,7 @@ pub const DEFAULT_VERTEX_SHADER: &'static str = r#"
         out vec2 v_tex_coords;
         void main() {
             v_tex_coords = tex_coords;
-            gl_Position = matrix * vec4(position, 0.0, 1.0);
+            gl_Position = vec4(position, 0.0, 1.0);
         }
     "#;
 
