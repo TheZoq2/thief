@@ -1,6 +1,5 @@
 use glium::texture::texture2d::Texture2d;
 use glium::backend::Facade;
-use glium::uniforms::{Uniforms, AsUniformValue, UniformsStorage};
 use glium::{Program, VertexBuffer, Display};
 use glium::framebuffer::SimpleFrameBuffer;
 use glium;
@@ -8,9 +7,18 @@ use glium::Surface;
 
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use std::boxed::Box;
 
 use glium_types::Vertex;
+
+pub const DEFAULT_FRAGMENT_SHADER: &'static str = r#"
+        #version 140
+        in vec2 v_tex_coords;
+        out vec4 color;
+        uniform sampler2D tex;
+        void main() {
+            color = texture(tex, v_tex_coords);
+        }
+    "#;
 
 pub const DEFAULT_VERTEX_SHADER: &'static str = r#"
         #version 140
@@ -23,7 +31,7 @@ pub const DEFAULT_VERTEX_SHADER: &'static str = r#"
         }
     "#;
 
-trait RenderTargets<T>
+pub trait RenderTargets<T>
     where T: Clone + Eq + PartialEq + Hash
 {
     fn get_render_target<'a>(&self, target: &T) -> SimpleFrameBuffer;
@@ -42,7 +50,7 @@ impl DefaultRenderStep
 {
     pub fn get_hash_set() -> HashSet<DefaultRenderStep>
     {
-        let set = HashSet::new();
+        let mut set = HashSet::new();
 
         set.insert(DefaultRenderStep::Diffuse);
         set.insert(DefaultRenderStep::Emissive);
@@ -85,7 +93,7 @@ impl RenderTargets<DefaultRenderStep> for DefaultUniforms
 }
 
 
-fn default_render_function(
+pub fn default_render_function(
             target: &mut glium::Frame,
             uniforms: &DefaultUniforms,
             vertex_buffer: &VertexBuffer<Vertex>,
@@ -97,7 +105,7 @@ fn default_render_function(
     let uniform_object = uniform!{
         diffuse_texture: &uniforms.diffuse_texture,
         emissive_texture: &uniforms.emissive_texture,
-        ambient: &uniforms.ambient
+        ambient: uniforms.ambient
     };
 
 
@@ -109,8 +117,8 @@ fn default_render_function(
 
 pub struct RenderProcess<T, U, F>
     where T: Eq + PartialEq + Hash + Clone,
-          U: Uniforms + RenderTargets<T>,
-          F: Fn(&glium::Frame, &U, &VertexBuffer<Vertex>, &Program)
+          U: RenderTargets<T>,
+          F: Fn(&mut glium::Frame, &U, &VertexBuffer<Vertex>, &Program)
 {
     steps: HashSet<T>,
     uniforms: U,
@@ -123,7 +131,7 @@ pub struct RenderProcess<T, U, F>
 
 impl<T, U, F> RenderProcess<T, U, F>
     where T: Eq + PartialEq + Hash + Clone,
-          U: Uniforms + RenderTargets<T>,
+          U: RenderTargets<T>,
           F: Fn(&mut glium::Frame, &U, &VertexBuffer<Vertex>, &Program)
 {
     pub fn new(
@@ -177,8 +185,7 @@ impl<T, U, F> RenderProcess<T, U, F>
 
     pub fn draw_to_display(&self, target: &mut glium::Frame)
     {
-        render_function(target, &self.uniforms, &self.vertices, &self.shader);
+        (self.render_function)(target, &self.uniforms, &self.vertices, &self.shader);
     }
-
 }
 

@@ -225,7 +225,8 @@ pub fn run_selector()
             &display,
             DefaultRenderStep::get_hash_set(),
             target_uniforms,
-            DEFAULT_FRAGMENT_SHADER
+            rendering::DEFAULT_FRAGMENT_SHADER,
+            rendering::default_render_function
         );
 
     let mut t: f32 = 0.;
@@ -252,7 +253,6 @@ pub fn run_selector()
         println!("Elapsed time: {} ms, FPS: {}", frametime_millis, fps);
         */
 
-        let target_surfaces = target_uniforms;
 
         //sprite.set_position(na::Vector2::new((t * 0.01).sin(), 0.));
         sprite.set_angle(t * 0.05);
