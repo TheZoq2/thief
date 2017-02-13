@@ -19,6 +19,7 @@ mod sprite;
 mod glium_types;
 mod line;
 mod rendering;
+mod render_steps;
 
 use drawable::{Drawable};
 use sprite::{SpriteFactory};
@@ -38,7 +39,9 @@ use glium_types::{Pixel};
 
 use std::path::Path;
 
-use rendering::{RenderProcess, DefaultRenderStep, DefaultUniforms};
+use rendering::RenderProcess;
+use render_steps::{RenderSteps, RenderParameters};
+
 
 
 pub struct Screenshot
@@ -220,13 +223,13 @@ pub fn run_selector()
 
     let grid = generate_grid(&display);
 
-    let target_uniforms = DefaultUniforms::new(&display, display.get_framebuffer_dimensions());
+    let target_uniforms = RenderParameters::new(&display, display.get_framebuffer_dimensions());
     let render_process = RenderProcess::new(
             &display,
-            DefaultRenderStep::get_hash_set(),
+            RenderSteps::get_hash_set(),
             target_uniforms,
-            rendering::DEFAULT_FRAGMENT_SHADER,
-            rendering::default_render_function
+            render_steps::DEFAULT_FRAGMENT_SHADER,
+            render_steps::default_render_function
         );
 
     let mut t: f32 = 0.;
@@ -271,11 +274,11 @@ pub fn run_selector()
 
         for line in &grid
         {
-            line.draw(&mut render_targets.get_mut(&DefaultRenderStep::Emissive).unwrap(), &camera_state);
+            line.draw(&mut render_targets.get_mut(&RenderSteps::Emissive).unwrap(), RenderSteps::Emissive, &camera_state);
         }
 
         //sprite.draw(&mut target, &camera_state);
-        sprite.draw(&mut render_targets.get_mut(&DefaultRenderStep::Diffuse).unwrap(), &camera_state);
+        sprite.draw(&mut render_targets.get_mut(&RenderSteps::Diffuse).unwrap(), RenderSteps::Diffuse, &camera_state);
 
         render_process.draw_to_display(&mut target);
 

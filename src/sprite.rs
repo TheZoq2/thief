@@ -13,6 +13,8 @@ use glium_types::{Vertex};
 use camera_state::CameraState;
 use drawing_util;
 
+use render_steps::RenderSteps;
+
 
 pub struct SpriteFactory
 {
@@ -137,7 +139,7 @@ impl Sprite
 
 impl drawable::Drawable for Sprite
 {
-    fn draw(&self, target: &mut SimpleFrameBuffer, camera_state: &CameraState)
+    fn draw(&self, target: &mut SimpleFrameBuffer, step: RenderSteps, camera_state: &CameraState)
     {
         let matrix = generate_default_matrix(
                 self.scale

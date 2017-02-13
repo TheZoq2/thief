@@ -11,6 +11,8 @@ use glium_types::{Vertex};
 use drawable::Drawable;
 use drawing_util;
 
+use render_steps::RenderSteps;
+
 
 pub const LINE_VERTEX_SHADER: &'static str = r#"
         #version 140
@@ -76,7 +78,7 @@ impl Line
 
 impl Drawable for Line
 {
-    fn draw(&self, target: &mut SimpleFrameBuffer, camera_state: &CameraState)
+    fn draw(&self, target: &mut SimpleFrameBuffer, render_steps: RenderSteps, camera_state: &CameraState)
     {
         let (target_width, target_height) = target.get_dimensions();
 
