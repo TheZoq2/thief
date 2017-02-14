@@ -130,6 +130,7 @@ pub fn capture_screenshot() -> Screenshot
                     *((*img).data.offset(offsets.2 as isize)) as u8
                     , *((*img).data.offset(offsets.1 as isize)) as u8
                     , *((*img).data.offset(offsets.0 as isize)) as u8
+                    , 1 as u8
                 );
 
             screenshot.push_pixel(pixel);
@@ -203,13 +204,16 @@ pub fn run_selector()
 
     //let image = screenshot.get_glium_image();
     //let image = RawImage2d::from_raw_rgba(image::open(&Path::new("media/fir1.png")).unwrap().raw_pixels());
-    let texture_path = Path::new("media/fir1.png");
+    let texture_path = Path::new("media/lamp1.png");
     let texture = glium::texture::SrgbTexture2d::new(&display, load_texture(texture_path)).unwrap();
+    let emissive_path = Path::new("media/lamp_emissive.png");
+    let emissive = glium::texture::SrgbTexture2d::new(&display, load_texture(emissive_path)).unwrap();
 
     //let mut sprite = Sprite::new(&display, Arc::new(texture));
     let sprite_factory = SpriteFactory::new(&display);
 
     let mut sprite = sprite_factory.create_sprite(Arc::new(texture));
+    sprite.set_additional_texture(RenderSteps::Emissive, Arc::new(emissive));
 
     let mut camera_state = CameraState::new();
     camera_state.set_position(na::Vector2::new(0., 0.));
@@ -219,7 +223,7 @@ pub fn run_selector()
     sprite.set_position(na::Vector2::new(100., 100.));
     //sprite.set_position(na::Vector2::new(0., 200.));
     sprite.set_origin(na::Vector2::new(0.5, 0.5));
-    sprite.set_scale(na::Vector2::new(1., 1.));
+    sprite.set_scale(na::Vector2::new(4., 4.));
 
     let grid = generate_grid(&display);
 
@@ -272,13 +276,16 @@ pub fn run_selector()
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 1.0);
 
-        for line in &grid
+        for (step, target) in &mut render_targets
         {
-            line.draw(&mut render_targets.get_mut(&RenderSteps::Emissive).unwrap(), RenderSteps::Emissive, &camera_state);
-        }
+            for line in &grid
+            {
+                line.draw(target, step, &camera_state);
+            }
 
-        //sprite.draw(&mut target, &camera_state);
-        sprite.draw(&mut render_targets.get_mut(&RenderSteps::Diffuse).unwrap(), RenderSteps::Diffuse, &camera_state);
+            //sprite.draw(&mut target, &camera_state);
+            sprite.draw(target, step, &camera_state);
+        }
 
         render_process.draw_to_display(&mut target);
 

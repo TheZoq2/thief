@@ -1,4 +1,4 @@
-pub type Pixel = (u8, u8, u8);
+pub type Pixel = (u8, u8, u8, u8);
 
 #[derive(Copy, Clone)]
 pub struct Vertex {

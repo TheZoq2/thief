@@ -15,6 +15,8 @@ use drawing_util;
 
 use render_steps::RenderSteps;
 
+use std::collections::HashMap;
+
 
 pub struct SpriteFactory
 {
@@ -63,7 +65,7 @@ pub struct Sprite
     position: na::Vector2<f32>,
     scale: na::Vector2<f32>,
     angle: f32,
-    texture: Arc<SrgbTexture2d>,
+    textures: HashMap<RenderSteps, Option<Arc<SrgbTexture2d>>>,
     aspect_ratio: f32,
     depth: f32,
 
@@ -89,12 +91,15 @@ impl Sprite
         let aspect_ratio = (texture_x as f32) 
                 / (texture_y as f32);
 
+        let mut textures = HashMap::new();
+        textures.insert(RenderSteps::Diffuse, Some(texture));
+
         Sprite
         {
             position: na::zero(),
             scale: na::one(),
             angle: 0.,
-            texture: texture,
+            textures: textures,
             aspect_ratio: aspect_ratio,
             depth: 0.,
 
@@ -130,37 +135,48 @@ impl Sprite
     {
         self.angle = angle;
     }
-    
+
     pub fn get_angle(&self) -> f32
     {
         return self.angle;
+    }
+
+    pub fn set_additional_texture(&mut self, step: RenderSteps, texture: Arc<SrgbTexture2d>)
+    {
+        self.textures.insert(step, Some(texture));
     }
 }
 
 impl drawable::Drawable for Sprite
 {
-    fn draw(&self, target: &mut SimpleFrameBuffer, step: RenderSteps, camera_state: &CameraState)
+    fn draw(&self, target: &mut SimpleFrameBuffer, step: &RenderSteps, camera_state: &CameraState)
     {
-        let matrix = generate_default_matrix(
-                self.scale
-                , self.texture_size
-                , self.position
-                , self.origin
-                , self.angle
-                , target.get_dimensions()
-                , camera_state
-            );
+        match self.textures.get(step)
+        {
+            Some(&Some(ref texture)) => {
+                let matrix = generate_default_matrix(
+                        self.scale
+                        , self.texture_size
+                        , self.position
+                        , self.origin
+                        , self.angle
+                        , target.get_dimensions()
+                        , camera_state
+                    );
 
 
+                let texture = &**texture;
+                let uniforms = uniform! {
+                    matrix: *matrix.as_ref(),
+                    tex: texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                };
 
-        let uniforms = uniform! {
-            matrix: *matrix.as_ref(),
-            tex: &*self.texture,
-        };
-
-        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-        target.draw(&*self.vertices, &indices, &*self.shader, &uniforms,
-                    &Default::default()).unwrap();
+                let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+                target.draw(&*self.vertices, &indices, &*self.shader, &uniforms,
+                            &Default::default()).unwrap();
+            },
+            _ => {}
+        }
     }
 }
 

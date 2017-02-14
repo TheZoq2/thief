@@ -78,28 +78,31 @@ impl Line
 
 impl Drawable for Line
 {
-    fn draw(&self, target: &mut SimpleFrameBuffer, render_steps: RenderSteps, camera_state: &CameraState)
+    fn draw(&self, target: &mut SimpleFrameBuffer, step: &RenderSteps, camera_state: &CameraState)
     {
-        let (target_width, target_height) = target.get_dimensions();
+        if *step == RenderSteps::Diffuse
+        {
+            let (target_width, target_height) = target.get_dimensions();
 
-        let world_matrix = camera_state.get_matrix()
-            * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32));
+            let world_matrix = camera_state.get_matrix()
+                * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32));
 
-        let final_matrix = world_matrix;
-        
-        let uniforms = uniform! {
-            matrix: *final_matrix.as_ref(),
-            line_color: self.color
-        };
+            let final_matrix = world_matrix;
+            
+            let uniforms = uniform! {
+                matrix: *final_matrix.as_ref(),
+                line_color: self.color
+            };
 
-        let params = glium::draw_parameters::DrawParameters{
-            polygon_mode: glium::draw_parameters::PolygonMode::Line,
-            .. Default::default()
-        };
+            let params = glium::draw_parameters::DrawParameters{
+                polygon_mode: glium::draw_parameters::PolygonMode::Line,
+                .. Default::default()
+            };
 
-        let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+            let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        target.draw(&self.vertices, &indices, &self.shader, &uniforms,
-                    &params).unwrap();
+            target.draw(&self.vertices, &indices, &self.shader, &uniforms,
+                        &params).unwrap();
+        }
     }
 }

@@ -13,7 +13,7 @@ pub trait Drawable
     fn draw(
             &self, 
             display: &mut SimpleFrameBuffer,
-            render_step: RenderSteps,
+            render_step: &RenderSteps,
             camera_state: &CameraState
         );
 }
