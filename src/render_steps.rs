@@ -12,34 +12,7 @@ use glium_types::Vertex;
 use rendering::RenderTargets;
 
 
-pub const DEFAULT_FRAGMENT_SHADER: &'static str = r#"
-        #version 140
-        in vec2 v_tex_coords;
-        out vec4 color;
-        uniform sampler2D diffuse_texture;
-        uniform sampler2D emissive_texture;
-        void main() {
-            vec4 emissive_color = vec4(0., 0., 0., 0.);
-
-            float blur_amount = 3;
-            for(float x = -blur_amount; x <= blur_amount; x++)
-            {
-                for(float y = -blur_amount; y <= blur_amount; y++)
-                {
-                    vec2 coords = v_tex_coords + vec2(x, y) * 0.001;
-                    emissive_color += texture(emissive_texture, coords);
-                }
-            }
-            emissive_color = emissive_color / (blur_amount * blur_amount * 2 * 2);
-
-            //emissive_color = texture(emissive_texture, v_tex_coords);
-
-            vec4 diffuse_color = texture(diffuse_texture, v_tex_coords);
-            //vec4 diffuse_color = vec4(0., 0., 0., 0.);
-            //emissive_color = vec4(0., 0., 0., 0.);
-            color = diffuse_color  + emissive_color;
-        }
-    "#;
+pub const DEFAULT_FRAGMENT_SHADER: &'static str = include_str!("shaders/postprocess_frag.fs");
 
 
 #[derive(Clone, Eq, PartialEq, Hash)]
@@ -109,7 +82,8 @@ pub fn default_render_function(
     let uniform_object = uniform!{
         diffuse_texture: &uniforms.diffuse_texture,
         emissive_texture: &uniforms.emissive_texture,
-        ambient: uniforms.ambient
+        ambient: uniforms.ambient,
+        resolution: (target.get_dimensions().0 as f32, target.get_dimensions().1 as f32)
     };
 
 
