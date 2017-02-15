@@ -4,6 +4,7 @@ use glium;
 use glium::texture::SrgbTexture2d;
 use glium::Surface;
 use glium::framebuffer::SimpleFrameBuffer;
+use glium::draw_parameters::DrawParameters;
 
 use std::sync::Arc;
 
@@ -171,9 +172,14 @@ impl drawable::Drawable for Sprite
                     tex: texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 };
 
+                let draw_parameters = DrawParameters{
+                    blend: glium::draw_parameters::Blend::alpha_blending(),
+                    .. Default::default()
+                };
+
                 let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
                 target.draw(&*self.vertices, &indices, &*self.shader, &uniforms,
-                            &Default::default()).unwrap();
+                            &draw_parameters).unwrap();
             },
             _ => {}
         }

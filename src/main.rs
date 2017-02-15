@@ -274,7 +274,7 @@ pub fn run_selector()
         t += 0.05;
 
         let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 0.0, 1.0);
+        target.clear_color(0.0, 0.0, 0.0, 0.0);
 
         for (step, target) in &mut render_targets
         {

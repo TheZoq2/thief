@@ -4,6 +4,7 @@ use glium::{Program, VertexBuffer};
 use glium::framebuffer::SimpleFrameBuffer;
 use glium;
 use glium::Surface;
+use glium::draw_parameters::DrawParameters;
 
 use std::collections::{HashSet};
 
@@ -86,7 +87,11 @@ pub fn default_render_function(
         resolution: (target.get_dimensions().0 as f32, target.get_dimensions().1 as f32)
     };
 
+    let draw_parameters = DrawParameters{
+        blend: glium::draw_parameters::Blend::alpha_blending(),
+        .. Default::default()
+    };
 
     target.draw(vertex_buffer, &indices, shader, &uniform_object,
-                &Default::default()).unwrap();
+                &draw_parameters).unwrap();
 }

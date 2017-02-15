@@ -24,5 +24,5 @@ void main() {
     vec4 diffuse_color = texture(diffuse_texture, v_tex_coords);
     //vec4 diffuse_color = vec4(0., 0., 0., 0.);
     //emissive_color = vec4(0., 0., 0., 0.);
-    color = diffuse_color  + emissive_color;
+    color = diffuse_color + emissive_color;
 }

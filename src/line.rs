@@ -88,7 +88,7 @@ impl Drawable for Line
                 * drawing_util::get_window_scaling_matrix((target_width as f32, target_height as f32));
 
             let final_matrix = world_matrix;
-            
+
             let uniforms = uniform! {
                 matrix: *final_matrix.as_ref(),
                 line_color: self.color
