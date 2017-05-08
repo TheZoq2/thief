@@ -194,6 +194,7 @@ fn generate_grid(display: &glium::Display) -> Vec<Line>
 }
 
 
+
 pub fn run_selector()
 {
     use glium::{DisplayBuild, Surface};
@@ -296,7 +297,6 @@ pub fn run_selector()
                 glium::glutin::Event::Closed => return,
                 glium::glutin::Event::MouseMoved(x, y) => {
                     let new_mouse = na::Vector2::new(x as f32, y as f32);
-                    let moved = new_mouse - mouse_pos;
 
                     //let new_pos = sprite.get_position() + moved;
                     //let new_pos = camera_state.get_position() + moved;

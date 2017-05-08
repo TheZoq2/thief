@@ -17,6 +17,7 @@ void main() {
             emissive_color += texture(emissive_texture, coords);
         }
     }
+
     emissive_color = emissive_color / (blur_amount * blur_amount * 2 * 2);
 
     //emissive_color = texture(emissive_texture, v_tex_coords);
