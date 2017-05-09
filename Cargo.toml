@@ -9,6 +9,7 @@ glium = "*"
 nalgebra = "*"
 image = "*"
 time = "*"
+specs = "*"
 
 [dependencies.x11]
 version = "2.6.1"
