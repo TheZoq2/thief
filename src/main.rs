@@ -2,8 +2,6 @@
 
 #![feature(custom_attribute)]
 
-extern crate x11;
-extern crate libc;
 extern crate nalgebra as na;
 extern crate image;
 extern crate time;
@@ -21,11 +19,11 @@ mod glium_types;
 mod line;
 mod rendering;
 mod render_steps;
+mod components;
 
 use drawable::{Drawable};
 use sprite::{SpriteFactory};
 
-use x11::xlib;
 use std::mem;
 
 use line::Line;
@@ -167,28 +165,29 @@ pub fn run_selector()
     let mut render_targets = render_process.get_targets();
 
 
+    let mut w = specs::World::new();
+
+    w.register::<Orientation>();
+    w.register::<Name>();
+
+    w.create_now()
+        .with(Orientation{position: na::Vector2::new(3., 1.), angle: 5.})
+        .with(Name{name: String::from("Yoloswag")})
+        .build();
+
+    w.create_now()
+        .with(Orientation{position: na::Vector2::new(2., 4.), angle: 5.})
+        .with(Name{name: String::from("Din mamma")})
+        .build();
+
+    w.create_now()
+        .with(Name{name: String::from("Din mamma")})
+        .build();
+
     let mut planner = {
-        let mut w = specs::World::new();
-
-        w.register::<Orientation>();
-        w.register::<Name>();
-
-        w.create_now()
-            .with(Orientation{position: na::Vector2::new(3., 1.), angle: 5.})
-            .with(Name{name: String::from("Yoloswag")})
-            .build();
-
-        w.create_now()
-            .with(Orientation{position: na::Vector2::new(2., 4.), angle: 5.})
-            .with(Name{name: String::from("Din mamma")})
-            .build();
-
-        w.create_now()
-            .with(Name{name: String::from("Din mamma")})
-            .build();
-
         specs::Planner::<()>::new(w)
     };
+
 
 
     planner.run0w2r(|name: &Name, orientation: &Orientation|
