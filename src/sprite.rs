@@ -167,12 +167,9 @@ impl drawable::Drawable for Sprite
 
 
                 let texture = &**texture;
-                //let uniforms = uniform! {
-                //    matrix: *matrix.as_ref(),
-                //    tex: texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                //};
+                let matrix_data: [[f32;4]; 4]= *matrix.as_ref();
                 let uniforms = uniform! {
-                    matrix: [[1.,0.,0.,0.],[0.,1.,0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]],
+                    matrix: matrix_data,
                     tex: texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 };
 

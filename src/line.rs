@@ -89,8 +89,10 @@ impl Drawable for Line
 
             let final_matrix = world_matrix;
 
+            let matrix_data: [[f32;4]; 4]= *final_matrix.as_ref();
+
             let uniforms = uniform! {
-                matrix: *final_matrix.as_ref(),
+                matrix: matrix_data,
                 line_color: self.color
             };
 
