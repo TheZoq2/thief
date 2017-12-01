@@ -6,7 +6,7 @@ authors = ["Frans Skarman <frans.skarman@gmail.com>"]
 [dependencies]
 libc = "*"
 glium = "*"
-nalgebra = "*"
+nalgebra = "0.11"
 image = "*"
 time = "*"
 specs = "*"

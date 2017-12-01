@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+//#![allow(dead_code)]
 
 #![feature(custom_attribute)]
 
@@ -25,14 +25,12 @@ mod render_steps;
 use drawable::{Drawable};
 use sprite::{SpriteFactory};
 
-use x11::xlib;
-use std::mem;
-
 use line::Line;
 
 use std::sync::Arc;
 
 use glium::texture::{RawImage2d};
+use glium::Surface;
 
 use camera_state::CameraState;
 
@@ -120,8 +118,17 @@ fn generate_grid(display: &glium::Display) -> Vec<Line>
 
 pub fn run_selector()
 {
-    use glium::{DisplayBuild, Surface};
-    let display = glium::glutin::WindowBuilder::new().build_glium().unwrap();
+    // 1. The **winit::EventsLoop** for handling events.
+    let mut events_loop = glium::glutin::EventsLoop::new();
+    // 2. Parameters for building the Window.
+    let window = glium::glutin::WindowBuilder::new()
+        .with_dimensions(1024, 768)
+        .with_title("Hello world");
+    // 3. Parameters for building the OpenGL context.
+    let context = glium::glutin::ContextBuilder::new();
+    // 4. Build the Display with the given window and OpenGL context parameters and register the
+    //    window with the events_loop.
+    let display = glium::Display::new(window, context, &events_loop).unwrap();
 
 
     //let screenshot = capture_screenshot();
@@ -167,23 +174,24 @@ pub fn run_selector()
     let mut render_targets = render_process.get_targets();
 
 
+    /*
     let mut planner = {
         let mut w = specs::World::new();
 
         w.register::<Orientation>();
         w.register::<Name>();
 
-        w.create_now()
+        w.create_entity()
             .with(Orientation{position: na::Vector2::new(3., 1.), angle: 5.})
             .with(Name{name: String::from("Yoloswag")})
             .build();
 
-        w.create_now()
+        w.create_entity()
             .with(Orientation{position: na::Vector2::new(2., 4.), angle: 5.})
             .with(Name{name: String::from("Din mamma")})
             .build();
 
-        w.create_now()
+        w.create_entity()
             .with(Name{name: String::from("Din mamma")})
             .build();
 
@@ -195,6 +203,7 @@ pub fn run_selector()
     {
         println!("{} is at {}", name.name, orientation.position);
     });
+    */
 
     //let mut old_time = time::now();
     loop {
@@ -245,23 +254,27 @@ pub fn run_selector()
 
         target.finish().unwrap();
 
-        for ev in display.poll_events() {
+        events_loop.poll_events(|ev| {
             match ev {
-                glium::glutin::Event::Closed => return,
-                glium::glutin::Event::MouseMoved(x, y) => {
-                    let new_mouse = na::Vector2::new(x as f32, y as f32);
+                glium::glutin::Event::WindowEvent{window_id, event} => {
+                    match event {
+                        glium::glutin::WindowEvent::Closed => return,
+                        glium::glutin::WindowEvent::MouseMoved{device_id, position: (x,y)} => {
+                            let new_mouse = na::Vector2::new(x as f32, y as f32);
 
-                    //let new_pos = sprite.get_position() + moved;
-                    //let new_pos = camera_state.get_position() + moved;
+                            //let new_pos = sprite.get_position() + moved;
+                            //let new_pos = camera_state.get_position() + moved;
 
-                    sprite.set_position(new_mouse);
-                    //camera_state.set_position(new_mouse);
+                            sprite.set_position(new_mouse);
+                            //camera_state.set_position(new_mouse);
 
-                    mouse_pos = new_mouse;
-                },
-                _ => ()
+                            mouse_pos = new_mouse;
+                        },
+                        _ => ()
+                    }
+                }
             }
-        }
+        });
     }
 }
 

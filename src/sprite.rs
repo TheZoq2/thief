@@ -98,7 +98,7 @@ impl Sprite
         Sprite
         {
             position: na::zero(),
-            scale: na::one(),
+            scale: na::Vector2::new(1., 1.),
             angle: 0.,
             textures: textures,
             aspect_ratio: aspect_ratio,
@@ -167,8 +167,12 @@ impl drawable::Drawable for Sprite
 
 
                 let texture = &**texture;
+                //let uniforms = uniform! {
+                //    matrix: *matrix.as_ref(),
+                //    tex: texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                //};
                 let uniforms = uniform! {
-                    matrix: *matrix.as_ref(),
+                    matrix: [[1.,0.,0.,0.],[0.,1.,0.,0.],[0.,0.,1.,0.],[0.,0.,0.,1.]],
                     tex: texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 };
 
