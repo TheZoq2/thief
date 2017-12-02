@@ -6,9 +6,13 @@ extern crate nalgebra as na;
 extern crate image;
 extern crate time;
 extern crate specs;
+extern crate rand;
 
 #[macro_use]
 extern crate glium;
+
+#[macro_use]
+extern crate lazy_static;
 
 mod drawable;
 mod drawing_util;
@@ -20,6 +24,7 @@ mod line;
 mod rendering;
 mod render_steps;
 mod components;
+mod grid;
 
 use drawable::{Drawable};
 use sprite::{SpriteFactory};
@@ -28,7 +33,7 @@ use line::Line;
 
 use std::sync::Arc;
 
-use glium::texture::{RawImage2d};
+use glium::texture::{RawImage2d, SrgbTexture2d};
 use glium::Surface;
 
 use camera_state::CameraState;
@@ -39,6 +44,8 @@ use std::path::Path;
 
 use rendering::RenderProcess;
 use render_steps::{RenderSteps, RenderParameters};
+
+use std::collections::HashMap;
 
 
 #[derive(Clone, Debug)]
@@ -110,6 +117,23 @@ fn generate_grid(display: &glium::Display) -> Vec<Line>
         }
     }
 
+    result
+}
+
+fn load_textures(display: &glium::Display)
+    -> HashMap<grid::BlockType, Vec<Arc<SrgbTexture2d>>>
+{
+    let mut result = HashMap::new();
+
+    fn add_texture(display: &glium::Display, map: &mut HashMap<grid::BlockType, Vec<Arc<SrgbTexture2d>>>, path: &str) {
+        map.insert(
+            grid::BlockType::Stone,
+            vec!(Arc::new(SrgbTexture2d::new(display, load_texture(Path::new(path))).unwrap()))
+        );
+    };
+
+    add_texture(display, &mut result, "media/stone.png");
+    add_texture(display, &mut result, "media/StoneLadder.png");
     result
 }
 
