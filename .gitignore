@@ -2,3 +2,4 @@ target
 *.vi
 .gdb_history
 Cargo.lock
+*~
