@@ -5,7 +5,6 @@
 extern crate nalgebra as na;
 extern crate image;
 extern crate time;
-extern crate specs;
 extern crate rand;
 
 #[macro_use]
@@ -23,7 +22,6 @@ mod glium_types;
 mod line;
 mod rendering;
 mod render_steps;
-mod components;
 mod grid;
 
 use drawable::{Drawable};
@@ -48,31 +46,7 @@ use render_steps::{RenderSteps, RenderParameters};
 use std::collections::HashMap;
 
 
-#[derive(Clone, Debug)]
-struct Orientation
-{
-    position: na::Vector2<f32>,
-    angle: f32
-}
-impl specs::Component for Orientation
-{
-    type Storage = specs::VecStorage<Orientation>;
-}
-
-#[derive(Clone, Debug)]
-struct Name
-{
-    name: String
-}
-impl specs::Component for Name
-{
-    type Storage = specs::HashMapStorage<Name>;
-}
-
-
-
-pub fn load_texture<'a>(filename: &Path) -> RawImage2d<'a, u8>
-{
+pub fn load_texture<'a>(filename: &Path) -> RawImage2d<'a, u8> {
     let image = image::open(filename).unwrap().to_rgba();
     let dimensions = image.dimensions();
     let raw_pixels = image.into_raw();
@@ -101,8 +75,7 @@ fn load_textures(display: &glium::Display)
 
 
 
-pub fn run_selector()
-{
+pub fn run_selector() {
     // 1. The **winit::EventsLoop** for handling events.
     let mut events_loop = glium::glutin::EventsLoop::new();
     // 2. Parameters for building the Window.
@@ -154,8 +127,7 @@ pub fn run_selector()
         let mut target = display.draw();
         target.clear_color(0.0, 0.0, 0.0, 0.0);
 
-        for (step, target) in &mut render_targets
-        {
+        for (step, target) in &mut render_targets {
         }
 
         render_process.draw_to_display(&mut target);
